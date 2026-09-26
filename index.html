@@ -1,0 +1,3289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Experiment 12: Wire Resistance & Verification of Ohm's Law — ISC Class XII Physics Simulator</title>
+<!-- Google Fonts: Plus Jakarta Sans, Inter & JetBrains Mono -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<!-- Three.js and OrbitControls -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<style>
+  :root {
+    --bg-main: #060911;
+    --bg-panel: rgba(11, 17, 30, 0.94);
+    --bg-header: rgba(17, 24, 39, 0.98);
+    --bg-card: rgba(15, 23, 42, 0.80);
+    
+    --border-subtle: rgba(255, 255, 255, 0.09);
+    --border-bright: rgba(56, 189, 248, 0.35);
+    --border-active: rgba(14, 165, 233, 0.65);
+    
+    --text-pure: #ffffff;
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+    
+    --accent-sky: #38bdf8;
+    --accent-blue: #0284c7;
+    --accent-emerald: #10b981;
+    --accent-amber: #f59e0b;
+    --accent-rose: #ef4444;
+    
+    --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+    --shadow-window: 0 25px 65px -15px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  
+  body {
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: var(--font-sans);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  #canvas-container {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;
+  }
+  #canvas3d { width: 100%; height: 100%; display: block; outline: none; }
+
+  /* UI Layer */
+  #ui-layer {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; z-index: 10;
+  }
+
+  /* SVG Icons */
+  .icon-svg {
+    display: inline-block; width: 14px; height: 14px; vertical-align: middle;
+    fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+  }
+
+  /* ========================================================= */
+  /* TOP NAVIGATION BAR                                        */
+  /* ========================================================= */
+  #top-bar {
+    position: absolute; top: 0; left: 0; width: 100%; height: 58px;
+    background: linear-gradient(180deg, rgba(9, 14, 26, 0.98) 0%, rgba(9, 14, 26, 0.90) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 20px; pointer-events: auto; z-index: 200;
+  }
+
+  .lab-brand {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .lab-badge {
+    background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+    color: #fff; font-size: 11px; font-weight: 800;
+    padding: 4px 9px; border-radius: 6px; letter-spacing: 0.6px;
+  }
+  .lab-title-group {
+    display: flex; flex-direction: column;
+  }
+  .lab-title {
+    font-size: 13.5px; font-weight: 700; color: var(--text-pure); letter-spacing: -0.2px;
+  }
+  .lab-subtitle {
+    font-size: 11px; color: var(--text-secondary); font-weight: 500;
+  }
+
+  /* Procedure Switcher Tabs */
+  .proc-tabs {
+    display: flex; background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle); border-radius: 8px; padding: 3px; gap: 4px;
+  }
+  .proc-tab {
+    padding: 6px 14px; font-size: 11.5px; font-weight: 600;
+    color: var(--text-secondary); border-radius: 6px; cursor: pointer;
+    border: none; background: transparent; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .proc-tab:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+  .proc-tab.active {
+    background: #0284c7; color: #fff; font-weight: 700;
+    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.35);
+  }
+
+  /* Top Right Tools & Camera Presets */
+  .top-tools {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cam-group {
+    display: flex; background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-subtle); border-radius: 8px; padding: 2px;
+  }
+  .cam-btn {
+    padding: 5px 10px; font-size: 11px; font-weight: 600;
+    color: var(--text-secondary); border-radius: 5px; cursor: pointer;
+    border: none; background: transparent; transition: all 0.15s ease;
+  }
+  .cam-btn:hover { color: #fff; background: rgba(255, 255, 255, 0.08); }
+  .cam-btn.active {
+    background: rgba(56, 189, 248, 0.16); color: var(--accent-sky); font-weight: 700;
+  }
+
+  .win-toggle-btn {
+    display: flex; align-items: center; gap: 5px;
+    padding: 6px 11px; font-size: 11.5px; font-weight: 600;
+    color: var(--text-secondary); background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-subtle); border-radius: 7px;
+    cursor: pointer; transition: all 0.2s ease;
+  }
+  .win-toggle-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+  .win-toggle-btn.active {
+    background: rgba(2, 132, 199, 0.22); border-color: var(--accent-sky); color: var(--accent-sky);
+  }
+
+  .action-btn-primary {
+    background: #10b981; color: #fff; border: none;
+    padding: 6px 13px; font-size: 11.5px; font-weight: 700;
+    border-radius: 7px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3); transition: all 0.2s ease;
+  }
+  .action-btn-primary:hover { background: #059669; }
+
+  /* ========================================================= */
+  /* FLOATING WORKSPACE WINDOWS                                */
+  /* ========================================================= */
+  .window-frame {
+    position: absolute;
+    background: var(--bg-panel);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    box-shadow: var(--shadow-window);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    overflow: hidden;
+    display: none;
+    flex-direction: column;
+    z-index: 100;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+  }
+  .window-frame.active-window {
+    border-color: var(--border-bright);
+    box-shadow: 0 25px 65px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(56, 189, 248, 0.35);
+  }
+
+  .window-titlebar {
+    height: 38px;
+    background: var(--bg-header);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px;
+    cursor: grab;
+    user-select: none;
+  }
+  .window-titlebar:active { cursor: grabbing; }
+
+  .window-title-group {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 12px; font-weight: 700; color: var(--text-pure); letter-spacing: -0.1px;
+  }
+  .window-controls {
+    display: flex; align-items: center; gap: 6px;
+  }
+  .win-ctrl-btn {
+    width: 22px; height: 22px; border-radius: 5px;
+    border: none; background: transparent; color: var(--text-secondary);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 12px; transition: all 0.15s ease;
+  }
+  .win-ctrl-btn:hover { background: rgba(255, 255, 255, 0.12); color: #fff; }
+  .win-ctrl-btn.close:hover { background: rgba(239, 68, 68, 0.25); color: var(--accent-rose); }
+
+  .window-body {
+    padding: 14px; overflow-y: auto; max-height: calc(100vh - 130px);
+  }
+
+  /* Specific Window Placements */
+  #win-directive { top: 68px; left: 16px; width: 360px; display: flex; }
+  #win-telemetry { top: 68px; right: 16px; width: 340px; }
+  #win-table { bottom: 92px; left: 16px; width: 480px; }
+  #win-graph { bottom: 92px; right: 16px; width: 480px; }
+  #win-controls { bottom: 16px; left: 50%; transform: translateX(-50%); width: 880px; z-index: 500; display: flex; }
+  #win-meters-inspection { top: 68px; left: 50%; transform: translateX(-50%); width: 780px; z-index: 600; }
+  #win-report { top: 68px; left: 390px; width: 430px; z-index: 450; }
+
+  /* ========================================================= */
+  /* CARDS & TYPOGRAPHY                                        */
+  /* ========================================================= */
+  .formula-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+  .formula-title {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: var(--accent-sky); margin-bottom: 4px;
+  }
+  .formula-math {
+    font-family: var(--font-mono); color: #38bdf8; font-size: 13.5px; font-weight: 700;
+    letter-spacing: 0.2px; margin: 3px 0;
+  }
+
+  .step-badge {
+    display: inline-block; background: rgba(56, 189, 248, 0.15); color: var(--accent-sky);
+    font-size: 10px; font-weight: 800; padding: 2px 7px;
+    border-radius: 4px; margin-bottom: 6px; border: 1px solid rgba(56, 189, 248, 0.25);
+    letter-spacing: 0.5px;
+  }
+  .step-title {
+    font-size: 13.5px; font-weight: 700; color: var(--text-pure); margin-bottom: 4px;
+  }
+  .step-desc {
+    font-size: 12px; color: #cbd5e1; line-height: 1.5; margin-bottom: 12px;
+  }
+  .step-nav-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px;
+  }
+  .btn-step-nav {
+    flex: 1; padding: 7px 12px; font-size: 11.5px; font-weight: 600;
+    border-radius: 6px; cursor: pointer; border: 1px solid var(--border-subtle);
+    background: rgba(255, 255, 255, 0.06); color: var(--text-primary); transition: all 0.2s ease;
+  }
+  .btn-step-nav:hover { background: rgba(255, 255, 255, 0.14); color: #fff; }
+  .btn-step-nav.primary {
+    background: var(--accent-blue); color: #ffffff; border-color: var(--accent-blue); font-weight: 700;
+  }
+  .btn-step-nav.primary:hover { background: #0369a1; }
+  
+  .btn-step-connect {
+    width: 100%; padding: 8px 12px; font-size: 12px; font-weight: 700;
+    border-radius: 6px; cursor: pointer; border: none;
+    background: #10b981; color: #ffffff; transition: all 0.2s ease; margin-bottom: 8px;
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-step-connect:hover { background: #059669; }
+
+  /* Telemetry Grid */
+  .gauge-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  }
+  .gauge-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    border-radius: 8px; padding: 9px 12px;
+  }
+  .gauge-label {
+    font-size: 10.5px; color: var(--text-secondary); margin-bottom: 3px;
+    display: flex; align-items: center; gap: 6px; font-weight: 600;
+  }
+  .gauge-val {
+    font-family: var(--font-mono); font-size: 15px; font-weight: 700; color: #fff;
+  }
+  .gauge-indicator-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+  }
+  .gauge-indicator-dot.red { background: #ef4444; }
+  .gauge-indicator-dot.blue { background: #38bdf8; }
+  .gauge-indicator-dot.green { background: #10b981; }
+
+  /* Observation Table */
+  .data-table-container {
+    max-height: 200px; overflow-y: auto; border: 1px solid var(--border-subtle);
+    border-radius: 7px; margin-bottom: 10px; background: rgba(0,0,0,0.25);
+  }
+  table.data-table {
+    width: 100%; border-collapse: collapse; font-size: 11px; text-align: center;
+  }
+  table.data-table th {
+    background: var(--bg-header); color: #cbd5e1; padding: 7px 5px;
+    position: sticky; top: 0; font-weight: 700; border-bottom: 1px solid var(--border-subtle);
+  }
+  table.data-table td {
+    padding: 6px 5px; border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-family: var(--font-mono); color: var(--text-primary);
+  }
+  table.data-table tr:hover td { background: rgba(255, 255, 255, 0.05); }
+
+  .table-actions {
+    display: flex; gap: 8px; justify-content: flex-end;
+  }
+  .btn-table-action {
+    padding: 5px 12px; font-size: 11.5px; font-weight: 600; border-radius: 6px;
+    border: 1px solid var(--border-subtle); background: rgba(255, 255, 255, 0.06);
+    color: #fff; cursor: pointer; transition: all 0.2s ease;
+  }
+  .btn-table-action:hover { background: rgba(255, 255, 255, 0.15); }
+
+  /* Control Dock */
+  .dock-inner {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    width: 100%; padding: 4px 10px;
+  }
+  .dock-section {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .dock-label {
+    font-size: 12px; font-weight: 600; color: var(--text-secondary); white-space: nowrap;
+  }
+  .slider-jockey {
+    width: 170px; accent-color: #38bdf8; cursor: pointer;
+  }
+  .jockey-badge-dock {
+    font-family: var(--font-mono); font-size: 12px; font-weight: 700;
+    background: #0284c7; color: #fff; padding: 2px 8px; border-radius: 4px;
+  }
+
+  .voltage-select {
+    background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-subtle);
+    color: #fff; padding: 5px 8px; border-radius: 6px; font-family: var(--font-mono);
+    font-size: 12px; outline: none; cursor: pointer;
+  }
+  .voltage-select option { background: #0f172a; color: #fff; }
+
+  .btn-key-toggle {
+    padding: 6px 12px; font-size: 12px; font-weight: 700; border-radius: 6px;
+    border: none; cursor: pointer; transition: all 0.2s ease;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .btn-key-toggle.closed { background: #10b981; color: #fff; }
+  .btn-key-toggle.open { background: #ef4444; color: #fff; }
+
+  .btn-record {
+    background: #0284c7; color: #fff; border: none; padding: 6px 14px; font-size: 12px; font-weight: 700;
+    border-radius: 6px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: all 0.2s ease;
+  }
+  .btn-record:hover { background: #0369a1; }
+
+  /* Toast Notification */
+  #toast-container {
+    position: absolute; bottom: 84px; right: 24px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+  }
+  .toast {
+    background: rgba(15, 23, 42, 0.96); border: 1px solid var(--border-subtle);
+    border-radius: 7px; padding: 9px 16px; font-size: 12px; color: #fff;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); backdrop-filter: blur(16px);
+    pointer-events: auto; animation: slideIn 0.2s ease-out;
+    display: flex; align-items: center; gap: 8px; font-weight: 500;
+  }
+  .toast.success { border-color: var(--accent-emerald); }
+  .toast.info { border-color: var(--accent-sky); }
+  .toast.warn { border-color: var(--accent-amber); }
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* Mid-air wiring banner */
+  #wiring-status-banner {
+    position: absolute; top: 68px; left: 50%; transform: translateX(-50%);
+    background: rgba(2, 132, 199, 0.95); border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff; font-size: 12.5px; font-weight: 600; padding: 7px 20px;
+    border-radius: 25px; box-shadow: 0 10px 30px rgba(2, 132, 199, 0.4);
+    z-index: 800; display: none; align-items: center; gap: 10px; pointer-events: auto;
+  }
+  #btn-cancel-wire {
+    background: rgba(0, 0, 0, 0.35); border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #fff; border-radius: 20px; padding: 2px 10px; font-size: 11px; cursor: pointer;
+  }
+  #btn-cancel-wire:hover { background: rgba(0, 0, 0, 0.65); }
+
+  /* Calculation Report Cards */
+  .report-card {
+    background: var(--bg-card); border: 1px solid var(--border-subtle);
+    border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 12px;
+  }
+  .report-label { color: var(--text-secondary); font-weight: 700; font-size: 10.5px; text-transform: uppercase; margin-bottom: 2px; }
+  .report-val { font-family: var(--font-mono); color: var(--accent-sky); font-size: 13px; font-weight: 700; }
+</style>
+</head>
+
+<body>
+<div id="canvas-container">
+  <canvas id="canvas3d"></canvas>
+</div>
+
+<!-- Dynamic Wiring Banner -->
+<div id="wiring-status-banner">
+  <span id="wiring-status-text">Wire attached. Click destination terminal to connect.</span>
+  <button id="btn-cancel-wire" onclick="cancelDanglingWire()">Cancel (Esc)</button>
+</div>
+
+<div id="ui-layer">
+  <!-- Top Navigation Bar -->
+  <header id="top-bar">
+    <div class="lab-brand">
+      <span class="lab-badge">ISC CLASS XII</span>
+      <div class="lab-title-group">
+        <span class="lab-title">Experiment No. 12: Wire Resistance & Ohm's Law</span>
+        <span class="lab-subtitle">Virtual Physics Laboratory — Precision Simulation</span>
+      </div>
+    </div>
+
+    <!-- Procedure Switcher Tabs -->
+    <div class="proc-tabs">
+      <button class="proc-tab active" id="tab-proc-a" onclick="switchProcedure('A')">Procedure (A): Wire Resistance (λ)</button>
+      <button class="proc-tab" id="tab-proc-b" onclick="switchProcedure('B')">Procedure (B): Ohm's Law (V = I·R)</button>
+    </div>
+
+    <!-- Tools, Camera Presets & Window Toggles -->
+    <div class="top-tools">
+      <div class="cam-group">
+        <button class="cam-btn active" onclick="setCameraPreset('bench')" title="Overview of entire workbench">Bench</button>
+        <button class="cam-btn" onclick="setCameraPreset('meters')" title="Zoom into EDM-80 Moving Coil Meters">Meters</button>
+        <button class="cam-btn" onclick="setCameraPreset('bridge')" title="Focus on 100cm Ruler & Sliding Jockey">Bridge</button>
+        <button class="cam-btn" onclick="setCameraPreset('battery')" title="Focus on Battery Eliminator">Source</button>
+        <button class="cam-btn" onclick="setCameraPreset('rb')" title="Focus on Resistance Box">R.B.</button>
+      </div>
+
+      <button class="win-toggle-btn active" id="btn-toggle-guide" onclick="toggleWindow('win-directive')" title="ISC Practical Manual & Wiring Guide">Manual</button>
+      <button class="win-toggle-btn" id="btn-toggle-dials" onclick="toggleWindow('win-meters-inspection')" title="Anti-Parallax EDM-80 Mirror Dials">Dials</button>
+      <button class="win-toggle-btn" id="btn-toggle-hud" onclick="toggleWindow('win-telemetry')" title="Real-time Circuit Status & Telemetry">HUD</button>
+      <button class="win-toggle-btn" id="btn-toggle-table" onclick="toggleWindow('win-table')" title="ISC Observation Table">Table</button>
+      <button class="win-toggle-btn" id="btn-toggle-graph" onclick="toggleWindow('win-graph')" title="Real-time Linear Regression Plot">Graph</button>
+      <button class="win-toggle-btn" id="btn-toggle-report" onclick="toggleWindow('win-report')" title="ISC Practical Calculations & Result Sheet">Result</button>
+      <button class="win-toggle-btn" id="btn-toggle-clean" onclick="toggleCleanView()" title="Toggle Clean Mode (Hide/Show UI)">Clean</button>
+
+      <button class="action-btn-primary" onclick="autoWireAll()">Auto-Wire Walkthrough</button>
+    </div>
+  </header>
+
+  <!-- WINDOW 1: Guided Wiring Tutorial & ISC Manual -->
+  <div class="window-frame" id="win-directive">
+    <div class="window-titlebar">
+      <div class="window-title-group">ISC Practical Manual Guide</div>
+      <div class="window-controls">
+        <button class="win-ctrl-btn" onclick="toggleWindow('win-directive')">✕</button>
+      </div>
+    </div>
+    <div class="window-body">
+      <div class="formula-card" style="border-color: rgba(56, 189, 248, 0.4); margin-bottom: 10px;">
+        <div class="formula-title">AIM (Experiment No. 12):</div>
+        <div style="font-size: 11.5px; color: var(--text-primary); line-height: 1.45;">
+          To determine the resistance per unit length of wire (<strong style="color:var(--accent-emerald);">λ</strong>) and to verify Ohm's law.
+        </div>
+        <div style="font-size: 10.5px; color: var(--text-secondary); margin-top: 5px;">
+          <strong>Least Counts:</strong> Voltmeter = <strong>0.05 V</strong>, Ammeter = <strong>0.02 A</strong>
+        </div>
+      </div>
+
+      <div class="step-badge" id="step-badge-text">PROCEDURE A — STEP 1 OF 7</div>
+      <div class="step-title" id="step-title-text">Battery (+) → Ammeter (+)</div>
+      <div class="step-desc" id="step-desc-text">
+        Click <strong style="color:#ef4444">Battery Eliminator (+)</strong> terminal, then click <strong style="color:#ef4444">Ammeter (+)</strong> terminal.
+      </div>
+
+      <button class="btn-step-connect" id="btn-connect-current-wire" onclick="connectCurrentTutorialWire()">
+        Connect This Wire
+      </button>
+
+      <div class="step-nav-bar">
+        <button class="btn-step-nav" onclick="prevStep()">← Previous</button>
+        <button class="btn-step-nav primary" onclick="nextStep()">Next Step →</button>
+      </div>
+
+      <div class="formula-card" style="margin-top: 12px;">
+        <div class="formula-title">ISC Deductions Formula:</div>
+        <div class="formula-math" id="manual-formula-display">λ = (S × R) / V₀</div>
+        <div style="color: var(--text-secondary); font-size: 10.5px; margin-top: 4px;" id="manual-formula-desc">
+          Where <strong>S</strong> = Slope (ΔV/Δl), <strong>R</strong> = 2.0 Ω standard resistor, <strong>V₀</strong> = Y-intercept when l = 0.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WINDOW 2: Live Telemetry & Dynamic Schematic -->
+  <div class="window-frame" id="win-telemetry">
+    <div class="window-titlebar">
+      <div class="window-title-group">Telemetry & Schematic</div>
+      <div class="window-controls">
+        <button class="win-ctrl-btn" onclick="toggleWindow('win-telemetry')">✕</button>
+      </div>
+    </div>
+    <div class="window-body">
+      <div class="gauge-grid">
+        <div class="gauge-card">
+          <div class="gauge-label"><span class="gauge-indicator-dot red"></span> Voltmeter (V)</div>
+          <div class="gauge-val" id="hud-voltmeter">0.00 V</div>
+        </div>
+        <div class="gauge-card">
+          <div class="gauge-label"><span class="gauge-indicator-dot blue"></span> Ammeter (I)</div>
+          <div class="gauge-val" id="hud-ammeter">0.00 A</div>
+        </div>
+        <div class="gauge-card">
+          <div class="gauge-label"><span class="gauge-indicator-dot green"></span> Jockey (l) / R.B.</div>
+          <div class="gauge-val" id="hud-jockey">30.0 cm</div>
+        </div>
+        <div class="gauge-card">
+          <div class="gauge-label"><span class="gauge-indicator-dot red"></span> D.C. Source</div>
+          <div class="gauge-val" id="hud-source">2.0 V DC</div>
+        </div>
+      </div>
+
+      <div class="gauge-card" style="margin-top: 8px;">
+        <div class="gauge-label">Plug Key Status</div>
+        <div class="gauge-val" id="hud-key" style="color: #ef4444; font-size: 12.5px;">KEY OPEN (0 V)</div>
+      </div>
+
+      <!-- Realtime Circuit Schematic SVG -->
+      <div style="margin-top: 10px; background: rgba(0,0,0,0.4); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 6px;">
+        <svg id="schematic-svg" viewBox="0 0 300 100" style="width:100%; height:85px; display:block;">
+          <!-- SVG content generated dynamically -->
+        </svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- WINDOW 3: Observation Table -->
+  <div class="window-frame" id="win-table">
+    <div class="window-titlebar">
+      <div class="window-title-group"><span id="table-title-text">ISC Observation Table — Procedure A</span></div>
+      <div class="window-controls">
+        <button class="win-ctrl-btn" onclick="toggleWindow('win-table')">✕</button>
+      </div>
+    </div>
+    <div class="window-body">
+      <div class="data-table-container">
+        <table class="data-table" id="obs-table">
+          <thead id="obs-thead"></thead>
+          <tbody id="obs-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="table-actions">
+        <button class="btn-table-action" onclick="clearReadings()">Clear Table</button>
+        <button class="btn-table-action" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WINDOW 4: Real-time Linear Regression Graph -->
+  <div class="window-frame" id="win-graph">
+    <div class="window-titlebar">
+      <div class="window-title-group"><span id="graph-window-title">Real-time Graph (V vs l)</span></div>
+      <div class="window-controls">
+        <button class="win-ctrl-btn" onclick="toggleWindow('win-graph')">✕</button>
+      </div>
+    </div>
+    <div class="window-body">
+      <div style="background:#070a13; border:1px solid var(--border-subtle); border-radius:7px; padding:6px;">
+        <canvas id="graphCanvas" width="430" height="230" style="display:block;"></canvas>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:8px; font-size:11.5px; color:var(--text-secondary);" id="graph-stats-row">
+        <span>Slope (<strong id="lbl-slope-type">S</strong>): <strong id="graph-slope" style="color:var(--accent-sky);">--</strong></span>
+        <span>Y-Intercept (<strong id="lbl-intercept-type">V₀</strong>): <strong id="graph-intercept" style="color:var(--accent-amber);">--</strong></span>
+        <span>λ: <strong id="graph-lambda" style="color:var(--accent-emerald);">-- Ω/cm</strong></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- WINDOW 5: EDM-80 Mirror Dials Close-up Inspection -->
+  <div class="window-frame" id="win-meters-inspection">
+    <div class="window-titlebar">
+      <div class="window-title-group">EDM-80 Mirror-Scale Analog Meter Inspection</div>
+      <div class="window-controls">
+        <button class="win-ctrl-btn" onclick="toggleWindow('win-meters-inspection')">✕</button>
+      </div>
+    </div>
+    <div class="window-body" style="display:flex; gap:16px; justify-content:center; background:#070a13;">
+      <div style="text-align:center;">
+        <canvas id="canvas-dial-volt" width="350" height="250" style="border-radius:8px; border:1px solid rgba(255,255,255,0.15);"></canvas>
+        <div style="font-size:11.5px; font-weight:700; color:var(--accent-rose); margin-top:6px;">VOLTMETER (0–5 V, L.C. = 0.05 V)</div>
+        <div style="font-family:var(--font-mono); font-size:13.5px; color:#fff; font-weight:700;" id="insp-volt-val">0.00 V</div>
+      </div>
+      <div style="text-align:center;">
+        <canvas id="canvas-dial-amm" width="350" height="250" style="border-radius:8px; border:1px solid rgba(255,255,255,0.15);"></canvas>
+        <div style="font-size:11.5px; font-weight:700; color:var(--accent-sky); margin-top:6px;">AMMETER (0–1 A, L.C. = 0.02 A)</div>
+        <div style="font-family:var(--font-mono); font-size:13.5px; color:#fff; font-weight:700;" id="insp-amm-val">0.00 A</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WINDOW 6: Calculation Sheet & Lab Report -->
+  <div class="window-frame" id="win-report">
+    <div class="window-titlebar">
+      <div class="window-title-group">ISC Practical Calculations & Result</div>
+      <div class="window-controls">
+        <button class="win-ctrl-btn" onclick="toggleWindow('win-report')">✕</button>
+      </div>
+    </div>
+    <div class="window-body">
+      <div class="report-card">
+        <div class="report-label">GRAPH SLOPE (S):</div>
+        <div class="report-val" id="rep-slope">S = ΔV / Δl = -- V/cm</div>
+      </div>
+      <div class="report-card">
+        <div class="report-label">GRAPH INTERCEPT (V₀ at l = 0):</div>
+        <div class="report-val" id="rep-intercept" style="color:var(--accent-amber);">V₀ = -- V</div>
+      </div>
+      <div class="report-card">
+        <div class="report-label">CALCULATED WIRE RESISTANCE PER UNIT LENGTH (λ):</div>
+        <div class="report-val" id="rep-lambda-calc" style="color:var(--accent-emerald);">λ = (S × R) / V₀ = -- Ω/cm</div>
+        <div style="font-size:10.5px; color:var(--text-secondary); margin-top:3px;">Standard Resistor R = 2.0 Ω</div>
+      </div>
+      <div class="report-card" style="border-color: rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.08);">
+        <div class="report-label" style="color:var(--accent-emerald);">FINAL LABORATORY RESULT:</div>
+        <div style="font-size:12.5px; font-weight:700; color:#fff; line-height:1.5; margin-top:3px;" id="rep-final-text">
+          1. The resistance per unit length of wire is λ = ...... ohm/cm.<br>
+          2. Ohm's law is verified as V vs I plot is a straight line.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Control Dock -->
+  <footer class="window-frame" id="win-controls" style="pointer-events: auto;">
+    <div class="window-titlebar" style="height: 28px; padding: 0 10px;">
+      <span style="font-size: 11px; font-weight: 700; color: #94a3b8;">Laboratory Apparatus Control Dock</span>
+      <div class="window-controls">
+        <button class="win-ctrl-btn" onclick="toggleWindow('win-controls')">—</button>
+      </div>
+    </div>
+    <div class="dock-inner">
+      <div class="dock-section">
+        <!-- Jockey Slider (Proc A, 0 to 100 cm full range) -->
+        <div style="display:flex; align-items:center; gap:8px;" id="dock-jockey-group">
+          <span class="dock-label">Jockey (C):</span>
+          <input type="range" class="slider-jockey" id="slider-jockey" min="0" max="100" step="0.5" value="30.0" oninput="onJockeySliderInput(this.value)">
+          <span class="jockey-badge-dock" id="jockey-badge">30.0 cm</span>
+        </div>
+
+        <!-- R.B. Resistance Display (Proc B) -->
+        <div style="display:none; align-items:center; gap:8px;" id="dock-rb-group">
+          <span class="dock-label">R.B. Dialled:</span>
+          <span class="jockey-badge-dock" id="rb-badge" style="background:#f59e0b;">1.0 Ω</span>
+        </div>
+
+        <!-- Eliminator Voltage Selector -->
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span class="dock-label">D.C. Source:</span>
+          <select class="voltage-select" id="select-voltage" onchange="onVoltageChange(this.value)">
+            <option value="2">2.0 V</option>
+            <option value="4">4.0 V</option>
+            <option value="6">6.0 V</option>
+            <option value="8">8.0 V</option>
+            <option value="10">10.0 V</option>
+            <option value="12">12.0 V</option>
+          </select>
+        </div>
+
+        <!-- Plug Key Button (Defaults to OPEN) -->
+        <button class="btn-key-toggle open" id="btn-key" onclick="togglePlugKey()">
+          <span id="btn-key-text">Key: OPEN</span>
+        </button>
+      </div>
+
+      <div class="dock-section">
+        <!-- Undo Wire Button -->
+        <button class="btn-table-action" onclick="undoLastWire()" title="Remove the last connected wire">
+          Undo Wire
+        </button>
+
+        <!-- Reset All Wires -->
+        <button class="btn-table-action" onclick="resetAllWires()" title="Remove all wires from the workbench">
+          Reset Wires
+        </button>
+
+        <!-- Record Observation Button -->
+        <button class="btn-record" onclick="recordObservation()">
+          Record Data
+        </button>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- Toast Container -->
+<div id="toast-container"></div>
+
+<script>
+// =========================================================================
+// 1. SOUND SYSTEM (SUBDUED LABORATORY ACOUSTICS)
+// =========================================================================
+const AudioSys = {
+  ctx: null,
+  init() {
+    if (!this.ctx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      if (AudioContext) this.ctx = new AudioContext();
+    }
+  },
+  playClick() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.03);
+    gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.03);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.03);
+  },
+  playSnap() {
+    this.init();
+    if (!this.ctx) return;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(70, this.ctx.currentTime + 0.05);
+    gain.gain.setValueAtTime(0.28, this.ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start();
+    osc.stop(this.ctx.currentTime + 0.05);
+  },
+  playFriction() {
+    this.init();
+    if (!this.ctx) return;
+    const bufferSize = this.ctx.sampleRate * 0.03;
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+    const noise = this.ctx.createBufferSource();
+    noise.buffer = buffer;
+    const filter = this.ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 1200;
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(0.03, this.ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + 0.03);
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.ctx.destination);
+    noise.start();
+  },
+  playMutedBeep() {
+    this.init();
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const osc = this.ctx.createOscillator();
+    const gain = this.ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, now);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  }
+};
+
+// =========================================================================
+// 2. CORE PHYSICS CONSTANTS (ISC CLASS XII EXPERIMENT 12)
+// =========================================================================
+const STANDARD_RESISTANCE = 2.0;   // Coiled Standard Resistor R = 2.0 Ω
+const WIRE_LAMBDA = 0.015;         // Resistance per unit length (λ = 0.015 Ω/cm -> 100cm = 1.5 Ω)
+const WIRE_TOTAL_RESISTANCE = 1.5; // Wire AB total resistance = 1.5 Ω
+const AMMETER_RESISTANCE = 0.08;   // Internal resistance of ammeter
+const INTERNAL_RESISTANCE = 0.42;  // Internal resistance of DC battery eliminator
+
+let currentProcedure = 'A';    // 'A' = Wire Resistance (λ), 'B' = Ohm's Law (V = IR)
+let isCircuitComplete = false;  // Starts FALSE - Table starts clean and unwired
+let isKeyClosed = false;        // Key plug defaults to OPEN (P1 audit requirement!)
+let batteryVoltage = 2.0;       // Volts DC
+let jockeyL = 30.0;             // cm along the meter bridge (0 to 100 cm)
+let rbResistance = 1.0;         // Resistance box defaults to 1.0 Ω (P1 audit requirement!)
+
+// Needle Physics State (Second-order Damped Harmonic Oscillator)
+const needlePhysics = {
+  ammeter: { currentAngle: Math.PI * 0.25, targetAngle: Math.PI * 0.25, velocity: 0 },
+  voltmeter: { currentAngle: Math.PI * 0.25, targetAngle: Math.PI * 0.25, velocity: 0 }
+};
+
+// Overload state tracking
+let isAmmeterOverloaded = false;
+let isVoltmeterOverloaded = false;
+
+// Three.js State Variables
+let scene, camera, renderer, controls;
+let needleAmmeterMesh = null;
+let needleVoltmeterMesh = null;
+let dialTextureAmm = null;
+let dialTextureVolt = null;
+let dynamicWireMesh = null;
+let eliminatorKnob = null;
+let jockeyGroup = null;
+let meterBridgeGroup = null;
+let standardResistorGroup = null;
+let rbGroup = null;
+let rbPlugs = {};
+let plugKeyPin = null;
+
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let isDraggingJockey = false;
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -0.26);
+const midAirPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.2);
+
+// Calibrated 3D Terminal Coordinates
+const terminals = {
+  battery_pos: new THREE.Vector3(-5.5, 0.65, -1.35),
+  battery_neg: new THREE.Vector3(-6.9, 0.65, -1.35),
+  ammeter_pos: new THREE.Vector3(-3.45, 0.76, -1.75),
+  ammeter_neg: new THREE.Vector3(-2.15, 0.76, -1.75),
+  resistor_t1: new THREE.Vector3(-0.4, 0.82, -2.8),
+  resistor_t2: new THREE.Vector3(0.4, 0.82, -2.8),
+  voltmeter_pos: new THREE.Vector3(2.15, 0.76, -1.75),
+  voltmeter_neg: new THREE.Vector3(3.45, 0.76, -1.75),
+  bridge_a: new THREE.Vector3(-5.0, 0.55, 2.6),
+  bridge_b: new THREE.Vector3(5.0, 0.55, 2.6),
+  jockey_top: new THREE.Vector3(-2.0, 1.625, 2.2),
+  key_t1: new THREE.Vector3(4.8, 0.62, 0.0),
+  key_t2: new THREE.Vector3(5.6, 0.62, 0.0),
+  rb_t1: new THREE.Vector3(5.4, 1.25, -2.0),
+  rb_t2: new THREE.Vector3(8.2, 1.25, -2.0)
+};
+
+const terminalObjects = {};
+const terminalHalos = {};
+let selectedTerminalId = null;
+
+let danglingWireMesh = null;
+let danglingTipMesh = null;
+let connectedWires = []; // Array of { id, from, to, color, mesh }
+
+// =========================================================================
+// 3. WIRING TUTORIAL STEPS (AUDIT P0 FIX: PROCEDURE B MEASURES R.B.)
+// =========================================================================
+const tutorialStepsA = [
+  {
+    id: 1,
+    title: "Battery (+) → Ammeter (+)",
+    from: "battery_pos",
+    to: "ammeter_pos",
+    color: 0xef4444,
+    desc: "Connect heavy-duty RED wire from Battery Eliminator (+) to Ammeter (+)."
+  },
+  {
+    id: 2,
+    title: "Ammeter (−) → Standard Resistor R (T1)",
+    from: "ammeter_neg",
+    to: "resistor_t1",
+    color: 0x3b82f6,
+    desc: "Connect BLUE wire from Ammeter (−) to Standard Resistor left terminal (T1)."
+  },
+  {
+    id: 3,
+    title: "Standard Resistor R (T2) → Meter Bridge Terminal A",
+    from: "resistor_t2",
+    to: "bridge_a",
+    color: 0xeab308,
+    desc: "Connect YELLOW wire from Standard Resistor right terminal (T2) to Meter Bridge Terminal A."
+  },
+  {
+    id: 4,
+    title: "Meter Bridge Terminal B → Plug Key (T1)",
+    from: "bridge_b",
+    to: "key_t1",
+    color: 0x22c55e,
+    desc: "Connect Meter Bridge Terminal B to Plug Key left terminal (T1)."
+  },
+  {
+    id: 5,
+    title: "Plug Key (T2) → Battery (−)",
+    from: "key_t2",
+    to: "battery_neg",
+    color: 0x1e293b,
+    desc: "Connect Plug Key right terminal (T2) back to Battery Eliminator (−) to complete the main series loop."
+  },
+  {
+    id: 6,
+    title: "Voltmeter (+) → Junction before Resistor R (T1)",
+    from: "voltmeter_pos",
+    to: "resistor_t1",
+    color: 0xef4444,
+    desc: "Connect Voltmeter (+) across the standard resistor starting junction (Terminal T1)."
+  },
+  {
+    id: 7,
+    title: "Voltmeter (−) → Sliding Jockey C",
+    from: "voltmeter_neg",
+    to: "jockey_top",
+    color: 0x0284c7,
+    desc: "Connect Voltmeter (−) with the flexible lead wire to the top terminal of the Sliding Jockey C."
+  }
+];
+
+// PROCEDURE B: Resistance Box is the component under test! Voltmeter connects across R.B. (T1 and T2).
+const tutorialStepsB = [
+  {
+    id: 1,
+    title: "Battery (+) → Ammeter (+)",
+    from: "battery_pos",
+    to: "ammeter_pos",
+    color: 0xef4444,
+    desc: "Connect RED wire from Battery Eliminator (+) to Ammeter (+)."
+  },
+  {
+    id: 2,
+    title: "Ammeter (−) → Resistance Box R.B. (T1)",
+    from: "ammeter_neg",
+    to: "rb_t1",
+    color: 0x3b82f6,
+    desc: "Connect BLUE wire from Ammeter (−) to Resistance Box left terminal (T1)."
+  },
+  {
+    id: 3,
+    title: "Resistance Box R.B. (T2) → Plug Key (T1)",
+    from: "rb_t2",
+    to: "key_t1",
+    color: 0xeab308,
+    desc: "Connect YELLOW wire from Resistance Box right terminal (T2) to Plug Key left terminal (T1)."
+  },
+  {
+    id: 4,
+    title: "Plug Key (T2) → Battery (−)",
+    from: "key_t2",
+    to: "battery_neg",
+    color: 0x1e293b,
+    desc: "Connect Plug Key right terminal (T2) back to Battery Eliminator (−) to complete the series circuit."
+  },
+  {
+    id: 5,
+    title: "Voltmeter (+) across Resistance Box (T1)",
+    from: "voltmeter_pos",
+    to: "rb_t1",
+    color: 0xef4444,
+    desc: "Connect Voltmeter (+) in parallel across Resistance Box left terminal (T1)."
+  },
+  {
+    id: 6,
+    title: "Voltmeter (−) across Resistance Box (T2)",
+    from: "voltmeter_neg",
+    to: "rb_t2",
+    color: 0x1e293b,
+    desc: "Connect Voltmeter (−) in parallel across Resistance Box right terminal (T2) to measure potential drop V."
+  }
+];
+
+let currentTutorialStepIdx = 0;
+
+// Readings Collections
+const readingsA = [];
+const readingsB = [];
+
+// =========================================================================
+// 4. THREE.JS SCENE INITIALIZATION & LIGHTING
+// =========================================================================
+window.addEventListener('DOMContentLoaded', () => {
+  initThree();
+  setupDraggableWindows();
+  renderSchematicSVG();
+  updateTableHeaders();
+  updateTutorialStep();
+  updatePhysics();
+  initGraph();
+  window.addEventListener('resize', onWindowResize);
+});
+
+function initThree() {
+  const container = document.getElementById('canvas-container');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x070a13);
+
+  camera = new THREE.PerspectiveCamera(38, window.innerWidth / window.innerHeight, 0.1, 1000);
+  camera.position.set(0, 8.2, 9.6);
+
+  renderer = new THREE.WebGLRenderer({
+    canvas: document.getElementById('canvas3d'),
+    antialias: true,
+    powerPreference: 'high-performance'
+  });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = false;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.15;
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.05;
+  controls.maxPolarAngle = Math.PI * 0.48;
+  controls.minDistance = 2.0;
+  controls.maxDistance = 26.0;
+  controls.target.set(0, 0.4, 0);
+  controls.update();
+
+  setupLighting();
+  buildWorkbench();
+  buildApparatus();
+
+  window.addEventListener('pointerdown', onPointerDown);
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('click', onCanvasClick);
+  window.addEventListener('keydown', onKeyDown);
+
+  animate();
+}
+
+function setupLighting() {
+  const ambient = new THREE.AmbientLight(0xffffff, 1.1);
+  scene.add(ambient);
+
+  const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.75);
+  hemiLight.position.set(0, 20, 0);
+  scene.add(hemiLight);
+
+  const mainLight = new THREE.DirectionalLight(0xffffff, 0.95);
+  mainLight.position.set(4, 16, 8);
+  scene.add(mainLight);
+
+  const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.55);
+  fillLight.position.set(-6, 12, -4);
+  scene.add(fillLight);
+}
+
+// =========================================================================
+// 5. LABORATORY WORKBENCH
+// =========================================================================
+function buildWorkbench() {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1024; canvas.height = 1024;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#171f2d';
+  ctx.fillRect(0, 0, 1024, 1024);
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.035)';
+  ctx.lineWidth = 1;
+  for (let x = 0; x <= 1024; x += 64) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, 1024); ctx.stroke();
+  }
+  for (let y = 0; y <= 1024; y += 64) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(1024, y); ctx.stroke();
+  }
+
+  const benchTex = new THREE.CanvasTexture(canvas);
+
+  const tableTop = new THREE.Mesh(
+    new THREE.BoxGeometry(22, 0.5, 13),
+    new THREE.MeshStandardMaterial({
+      map: benchTex,
+      roughness: 0.45,
+      metalness: 0.1
+    })
+  );
+  tableTop.position.y = -0.25;
+  scene.add(tableTop);
+
+  const borderMat = new THREE.MeshStandardMaterial({
+    color: 0x3b1803,
+    roughness: 0.25,
+    metalness: 0.1
+  });
+  const border = new THREE.Mesh(new THREE.BoxGeometry(22.3, 0.06, 13.3), borderMat);
+  border.position.y = -0.04;
+  scene.add(border);
+
+  const brassMat = new THREE.MeshStandardMaterial({
+    color: 0xd4af37,
+    metalness: 0.95,
+    roughness: 0.15
+  });
+  const corners = [
+    [-11.1, -0.02, -6.6], [11.1, -0.02, -6.6],
+    [-11.1, -0.02, 6.6], [11.1, -0.02, 6.6]
+  ];
+  corners.forEach(([cx, cy, cz]) => {
+    const brk = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.5), brassMat);
+    brk.position.set(cx, cy, cz);
+    scene.add(brk);
+  });
+
+  const floorGrid = new THREE.GridHelper(40, 40, 0x1e293b, 0x0f172a);
+  floorGrid.position.y = -3.5;
+  scene.add(floorGrid);
+}
+
+function create3DBadge(text, yOffset, parentGroup) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 512; canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+  ctx.roundRect(8, 8, 496, 112, 16);
+  ctx.fill();
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 4;
+  ctx.roundRect(8, 8, 496, 112, 16);
+  ctx.stroke();
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 34px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 256, 64);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  const badge = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 0.4),
+    new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide })
+  );
+  badge.position.set(0, yOffset, 0);
+  parentGroup.add(badge);
+  return badge;
+}
+
+function makeTerminal(id, isRed = false) {
+  const termGroup = new THREE.Group();
+
+  const stud = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.045, 0.045, 0.32, 16),
+    new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.95, roughness: 0.15 })
+  );
+  stud.position.y = 0.16;
+  termGroup.add(stud);
+
+  const knobMat = new THREE.MeshStandardMaterial({
+    color: isRed ? 0xdc2626 : 0x0f172a,
+    roughness: 0.3,
+    metalness: 0.15
+  });
+  const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.13, 0.2, 16), knobMat);
+  knob.position.y = 0.26;
+  termGroup.add(knob);
+
+  const jackHole = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 0.08, 16),
+    new THREE.MeshStandardMaterial({ color: 0x050505, roughness: 0.9 })
+  );
+  jackHole.position.y = 0.34;
+  termGroup.add(jackHole);
+
+  const washer = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.16, 0.16, 0.04, 16),
+    new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.95, roughness: 0.15 })
+  );
+  washer.position.y = 0.02;
+  termGroup.add(washer);
+
+  const haloGeom = new THREE.RingGeometry(0.24, 0.38, 32);
+  const haloMat = new THREE.MeshBasicMaterial({
+    color: 0x38bdf8,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.0
+  });
+  const halo = new THREE.Mesh(haloGeom, haloMat);
+  halo.rotation.x = -Math.PI / 2;
+  halo.position.y = 0.38;
+  termGroup.add(halo);
+  terminalHalos[id] = halo;
+
+  const hitbox = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 0.9, 16),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  hitbox.position.y = 0.3;
+  hitbox.userData = { isTerminalHitbox: true, terminalId: id };
+  termGroup.add(hitbox);
+
+  termGroup.userData = { terminalId: id, isRed: isRed };
+  terminalObjects[id] = termGroup;
+  return termGroup;
+}
+
+// =========================================================================
+// 6. EDM-80 ANALOG METERS
+// =========================================================================
+function drawMeterDialCanvas(canvas, title, symbol, maxVal, isVoltmeter) {
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 12;
+  ctx.strokeRect(6, 6, w - 12, h - 12);
+
+  const screwCoords = [[50, 50], [w - 50, 50], [50, h - 50], [w - 50, h - 50]];
+  screwCoords.forEach(([sx, sy]) => {
+    ctx.fillStyle = '#94a3b8';
+    ctx.beginPath(); ctx.arc(sx, sy, 18, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#475569';
+    ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(sx - 12, sy); ctx.lineTo(sx + 12, sy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sx, sy - 12); ctx.lineTo(sx + 12, sy); ctx.stroke();
+  });
+
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 84px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText("EDM-80", 140, 160);
+
+  ctx.fillStyle = '#0284c7';
+  ctx.font = 'bold 72px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText("Labkafe", w - 140, 150);
+  ctx.fillStyle = '#64748b';
+  ctx.font = 'bold 30px "JetBrains Mono", monospace';
+  ctx.fillText("ISO 9001 CERTIFIED", w - 140, 200);
+
+  // Anti-Parallax Mirrored Arc Strip
+  const gradMirror = ctx.createLinearGradient(0, 300, 0, 750);
+  gradMirror.addColorStop(0, '#cbd5e1');
+  gradMirror.addColorStop(0.5, '#f8fafc');
+  gradMirror.addColorStop(1, '#94a3b8');
+  ctx.fillStyle = gradMirror;
+  ctx.beginPath();
+  ctx.arc(w / 2, 1380, 860, Math.PI * 1.25, Math.PI * 1.75);
+  ctx.arc(w / 2, 1380, 780, Math.PI * 1.75, Math.PI * 1.25, true);
+  ctx.fill();
+
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.arc(w / 2, 1380, 870, Math.PI * 1.25, Math.PI * 1.75); ctx.stroke();
+  ctx.beginPath(); ctx.arc(w / 2, 1380, 770, Math.PI * 1.25, Math.PI * 1.75); ctx.stroke();
+
+  // Graduations (Voltmeter LC = 0.05V, Ammeter LC = 0.02A)
+  const divs = 10;
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 76px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+
+  for (let i = 0; i <= divs; i++) {
+    const frac = i / divs;
+    const ang = Math.PI * 1.25 + frac * (Math.PI * 0.5);
+    const isMaj = (i % 2 === 0);
+    const r1 = 870;
+    const r2 = isMaj ? 1000 : 935;
+
+    const x1 = w / 2 + Math.cos(ang) * r1;
+    const y1 = 1380 + Math.sin(ang) * r1;
+    const x2 = w / 2 + Math.cos(ang) * r2;
+    const y2 = 1380 + Math.sin(ang) * r2;
+
+    ctx.lineWidth = isMaj ? 11 : 5;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+    if (isMaj) {
+      const val = (frac * maxVal).toFixed(isVoltmeter ? 0 : 1);
+      const tx = w / 2 + Math.cos(ang) * 1100;
+      const ty = 1380 + Math.sin(ang) * 1100;
+      ctx.fillText(val, tx, ty + 26);
+    }
+  }
+
+  for (let j = 0; j <= 50; j++) {
+    if (j % 5 === 0) continue;
+    const frac = j / 50;
+    const ang = Math.PI * 1.25 + frac * (Math.PI * 0.5);
+    const x1 = w / 2 + Math.cos(ang) * 870;
+    const y1 = 1380 + Math.sin(ang) * 870;
+    const x2 = w / 2 + Math.cos(ang) * 910;
+    const y2 = 1380 + Math.sin(ang) * 910;
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+
+  ctx.font = 'bold 260px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = isVoltmeter ? '#0284c7' : '#0f172a';
+  ctx.fillText(symbol, w / 2, 940);
+  ctx.lineWidth = 16;
+  ctx.beginPath();
+  ctx.moveTo(w / 2 - 120, 990);
+  ctx.lineTo(w / 2 + 120, 990);
+  ctx.stroke();
+
+  ctx.font = 'bold 36px "JetBrains Mono", monospace';
+  ctx.fillStyle = '#64748b';
+  const lcText = isVoltmeter ? "LEAST COUNT: 0.05V  ⏚  CLASS 1.5" : "LEAST COUNT: 0.02A  ⏚  CLASS 1.5";
+  ctx.fillText(lcText, w / 2, 1070);
+}
+
+function buildEdmMeter(title, symbol, maxVal, isVoltmeter) {
+  const group = new THREE.Group();
+
+  const caseMat = new THREE.MeshStandardMaterial({
+    color: 0x1e293b,
+    roughness: 0.25,
+    metalness: 0.35
+  });
+
+  const base = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.4, 2.7), caseMat);
+  base.position.y = 0.2;
+  group.add(base);
+
+  const frontShelf = new THREE.Mesh(new THREE.BoxGeometry(2.48, 0.25, 1.05), caseMat);
+  frontShelf.position.set(0, 0.45, 0.8);
+  group.add(frontShelf);
+
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(2.48, 1.7, 0.18), caseMat);
+  backWall.position.set(0, 1.25, -1.25);
+  group.add(backWall);
+
+  const sideL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.6, 2.0), caseMat);
+  sideL.position.set(-1.2, 1.15, -0.25);
+  group.add(sideL);
+
+  const sideR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.6, 2.0), caseMat);
+  sideR.position.set(1.2, 1.15, -0.25);
+  group.add(sideR);
+
+  const faceGroup = new THREE.Group();
+  faceGroup.position.set(0, 1.25, -0.28);
+  faceGroup.rotation.x = -Math.PI * 0.25;
+
+  const faceBacking = new THREE.Mesh(
+    new THREE.BoxGeometry(2.36, 1.76, 0.08),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.2 })
+  );
+  faceBacking.position.set(0, 0, -0.04);
+  faceGroup.add(faceBacking);
+
+  const dCanvas = document.createElement('canvas');
+  dCanvas.width = 2048; dCanvas.height = 1536;
+  drawMeterDialCanvas(dCanvas, title, symbol, maxVal, isVoltmeter);
+
+  const dialTexture = new THREE.CanvasTexture(dCanvas);
+  dialTexture.minFilter = THREE.LinearFilter;
+  dialTexture.anisotropy = 16;
+  dialTexture.needsUpdate = true;
+
+  const dialPlate = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.32, 1.72),
+    new THREE.MeshBasicMaterial({ map: dialTexture, color: 0xffffff })
+  );
+  dialPlate.position.set(0, 0, 0.005);
+  faceGroup.add(dialPlate);
+
+  const bMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2, metalness: 0.5 });
+  const bT = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.06, 0.06), bMat); bT.position.set(0, 0.86, 0.03); faceGroup.add(bT);
+  const bB = new THREE.Mesh(new THREE.BoxGeometry(2.36, 0.06, 0.06), bMat); bB.position.set(0, -0.86, 0.03); faceGroup.add(bB);
+  const bL = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.72, 0.06), bMat); bL.position.set(-1.18, 0, 0.03); faceGroup.add(bL);
+  const bR = new THREE.Mesh(new THREE.BoxGeometry(0.06, 1.72, 0.06), bMat); bR.position.set(1.18, 0, 0.03); faceGroup.add(bR);
+
+  const needlePivot = new THREE.Group();
+  needlePivot.position.set(0, -0.52, 0.025);
+
+  const needleBlade = new THREE.Mesh(
+    new THREE.ConeGeometry(0.025, 0.95, 4),
+    new THREE.MeshBasicMaterial({ color: 0xff1e1e })
+  );
+  needleBlade.geometry.translate(0, 0.475, 0);
+  needleBlade.rotation.y = Math.PI * 0.25;
+  needlePivot.add(needleBlade);
+
+  const hub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09, 0.09, 0.04, 32),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8, roughness: 0.2 })
+  );
+  hub.rotation.x = Math.PI / 2;
+  needlePivot.add(hub);
+
+  const centerPin = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 0.05, 16),
+    new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.1 })
+  );
+  centerPin.rotation.x = Math.PI / 2;
+  needlePivot.add(centerPin);
+
+  const counterWeight = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.02, 0.18, 16),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a })
+  );
+  counterWeight.position.y = -0.09;
+  needlePivot.add(counterWeight);
+
+  needlePivot.rotation.z = Math.PI * 0.25;
+  faceGroup.add(needlePivot);
+
+  const zeroScrew = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.12, 0.12, 0.05, 24),
+    new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.2 })
+  );
+  zeroScrew.rotation.x = Math.PI / 2;
+  zeroScrew.position.set(0, -0.68, 0.02);
+  const screwSlot = new THREE.Mesh(
+    new THREE.BoxGeometry(0.18, 0.025, 0.04),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b })
+  );
+  zeroScrew.add(screwSlot);
+  faceGroup.add(zeroScrew);
+
+  group.add(faceGroup);
+
+  const id = isVoltmeter ? 'voltmeter' : 'ammeter';
+  const tPos = makeTerminal(id + '_pos', true);
+  tPos.position.set(-0.65, 0.58, 0.75);
+  group.add(tPos);
+
+  const tNeg = makeTerminal(id + '_neg', false);
+  tNeg.position.set(0.65, 0.58, 0.75);
+  group.add(tNeg);
+
+  const npCanvas = document.createElement('canvas');
+  npCanvas.width = 512; npCanvas.height = 96;
+  const npctx = npCanvas.getContext('2d');
+  npctx.fillStyle = '#0a0a0c';
+  npctx.fillRect(0, 0, 512, 96);
+  npctx.strokeStyle = '#ffffff';
+  npctx.lineWidth = 4;
+  npctx.strokeRect(6, 6, 500, 84);
+  npctx.fillStyle = '#ffffff';
+  npctx.font = 'bold 34px "JetBrains Mono", monospace';
+  npctx.textAlign = 'center';
+  npctx.textBaseline = 'middle';
+  npctx.fillText("+   DC MOVING COIL   −", 256, 48);
+
+  const npMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.6, 0.3),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(npCanvas) })
+  );
+  npMesh.position.set(0, 0.22, 1.36);
+  group.add(npMesh);
+
+  create3DBadge(title.toUpperCase(), 2.4, group);
+  group.userData = { isMeter: true, isVoltmeter: isVoltmeter };
+
+  return {
+    group: group,
+    needle: needlePivot,
+    canvas: dCanvas,
+    texture: dialTexture,
+    maxScale: maxVal,
+    isVoltmeter: isVoltmeter
+  };
+}
+
+// =========================================================================
+// 7. 100 CM METER BRIDGE (AB) & JOCKEY
+// =========================================================================
+function buildMeterBridge() {
+  const group = new THREE.Group();
+
+  const bedMat = new THREE.MeshStandardMaterial({
+    color: 0x9a5b28,
+    roughness: 0.35,
+    metalness: 0.05
+  });
+  const bed = new THREE.Mesh(new THREE.BoxGeometry(11.2, 0.25, 1.6), bedMat);
+  bed.position.y = 0.125;
+  group.add(bed);
+
+  const brassMat = new THREE.MeshStandardMaterial({
+    color: 0xd4af37,
+    metalness: 0.95,
+    roughness: 0.15
+  });
+
+  const endA = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 1.45), brassMat);
+  endA.position.set(-5.0, 0.31, 0);
+  group.add(endA);
+
+  const tA = makeTerminal('bridge_a');
+  tA.position.set(-5.0, 0.37, 0.4);
+  group.add(tA);
+
+  const endB = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 1.45), brassMat);
+  endB.position.set(5.0, 0.31, 0);
+  group.add(endB);
+
+  const tB = makeTerminal('bridge_b');
+  tB.position.set(5.0, 0.37, 0.4);
+  group.add(tB);
+
+  const rCanvas = document.createElement('canvas');
+  rCanvas.width = 4096; rCanvas.height = 256;
+  const rctx = rCanvas.getContext('2d');
+
+  rctx.fillStyle = '#ffffff';
+  rctx.fillRect(0, 0, 4096, 256);
+  rctx.strokeStyle = '#0f172a';
+  rctx.lineWidth = 3;
+  rctx.strokeRect(4, 4, 4088, 248);
+
+  rctx.fillStyle = '#0f172a';
+  rctx.font = 'bold 36px "JetBrains Mono", monospace';
+  rctx.textAlign = 'center';
+
+  const margin = 48;
+  const span = 4096 - margin * 2;
+
+  for (let cm = 0; cm <= 100; cm++) {
+    const x = margin + (cm / 100.0) * span;
+    const is10 = (cm % 10 === 0);
+    const is5 = (cm % 5 === 0);
+    const len = is10 ? 70 : (is5 ? 45 : 25);
+
+    rctx.lineWidth = is10 ? 5 : (is5 ? 3 : 2);
+    rctx.beginPath(); rctx.moveTo(x, 4); rctx.lineTo(x, 4 + len); rctx.stroke();
+    rctx.beginPath(); rctx.moveTo(x, 252); rctx.lineTo(x, 252 - len); rctx.stroke();
+
+    if (is10) {
+      rctx.fillText(cm.toString(), x, 110);
+      rctx.fillText((100 - cm).toString(), x, 175);
+    }
+  }
+
+  const rTex = new THREE.CanvasTexture(rCanvas);
+  rTex.minFilter = THREE.LinearFilter;
+
+  const ruler = new THREE.Mesh(
+    new THREE.PlaneGeometry(10.0, 0.7),
+    new THREE.MeshBasicMaterial({ map: rTex })
+  );
+  ruler.rotation.x = -Math.PI / 2;
+  ruler.position.set(0, 0.26, 0);
+  group.add(ruler);
+
+  const wireMat = new THREE.MeshStandardMaterial({
+    color: 0x334155,
+    metalness: 0.98,
+    roughness: 0.1
+  });
+  const wireGeom = new THREE.CylinderGeometry(0.014, 0.014, 10.0, 16);
+  const bridgeWire = new THREE.Mesh(wireGeom, wireMat);
+  bridgeWire.rotation.z = Math.PI / 2;
+  bridgeWire.position.set(0, 0.28, 0);
+  group.add(bridgeWire);
+
+  jockeyGroup = new THREE.Group();
+
+  const contact = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.25, 4), brassMat);
+  contact.rotation.y = Math.PI * 0.25;
+  contact.rotation.x = Math.PI;
+  contact.position.y = 0.05;
+  jockeyGroup.add(contact);
+
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.35, 16), brassMat);
+  collar.position.y = 0.35;
+  jockeyGroup.add(collar);
+
+  const handle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.22, 0.18, 0.8, 16),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 })
+  );
+  handle.position.y = 0.85;
+  jockeyGroup.add(handle);
+
+  const topTerm = makeTerminal('jockey_top');
+  topTerm.position.y = 1.25;
+  jockeyGroup.add(topTerm);
+
+  const hitbox = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.45, 0.45, 1.8, 12),
+    new THREE.MeshBasicMaterial({ visible: false })
+  );
+  hitbox.position.y = 0.8;
+  hitbox.userData = { isJockeyHitbox: true };
+  jockeyGroup.add(hitbox);
+
+  const jBadgeCanvas = document.createElement('canvas');
+  jBadgeCanvas.width = 256; jBadgeCanvas.height = 80;
+  const jbCtx = jBadgeCanvas.getContext('2d');
+  const jBadgeTex = new THREE.CanvasTexture(jBadgeCanvas);
+  const jBadge = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.1, 0.35),
+    new THREE.MeshBasicMaterial({ map: jBadgeTex, transparent: true })
+  );
+  jBadge.position.set(0, 1.75, 0);
+  jBadge.userData = { isJockeyBadge: true, ctx: jbCtx, tex: jBadgeTex };
+  jockeyGroup.add(jBadge);
+
+  group.add(jockeyGroup);
+  group.position.set(0, 0, 2.2);
+  scene.add(group);
+  meterBridgeGroup = group;
+
+  updateJockey3D();
+}
+
+function updateJockey3D() {
+  if (!jockeyGroup) return;
+  const posX = -5.0 + (jockeyL / 100.0) * 10.0;
+  jockeyGroup.position.set(posX, 0.375, 0);
+
+  const badgeMesh = jockeyGroup.children.find(c => c.userData && c.userData.isJockeyBadge);
+  if (badgeMesh) {
+    const u = badgeMesh.userData;
+    u.ctx.fillStyle = '#0284c7';
+    u.ctx.fillRect(0, 0, 256, 80);
+    u.ctx.strokeStyle = '#ffffff';
+    u.ctx.lineWidth = 4;
+    u.ctx.strokeRect(2, 2, 252, 76);
+    u.ctx.fillStyle = '#ffffff';
+    u.ctx.font = 'bold 36px "JetBrains Mono", monospace';
+    u.ctx.textAlign = 'center';
+    u.ctx.textBaseline = 'middle';
+    u.ctx.fillText(`${jockeyL.toFixed(1)} cm`, 128, 40);
+    u.tex.needsUpdate = true;
+  }
+
+  terminals.jockey_top.set(posX, 1.625, 2.2);
+  if (typeof updateDynamicJockeyWire === 'function') {
+    updateDynamicJockeyWire();
+  }
+}
+
+// =========================================================================
+// 8. OTHER LAB APPARATUS
+// =========================================================================
+function buildBatteryEliminator() {
+  const group = new THREE.Group();
+
+  const cabinet = new THREE.Mesh(
+    new THREE.BoxGeometry(2.8, 1.8, 2.0),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.5, roughness: 0.35 })
+  );
+  cabinet.position.y = 0.9;
+  group.add(cabinet);
+
+  const fCanvas = document.createElement('canvas');
+  fCanvas.width = 512; fCanvas.height = 360;
+  const fctx = fCanvas.getContext('2d');
+  fctx.fillStyle = '#0f172a';
+  fctx.fillRect(0, 0, 512, 360);
+
+  fctx.fillStyle = '#ffffff';
+  fctx.font = 'bold 30px "Plus Jakarta Sans", sans-serif';
+  fctx.fillText("BATTERY ELIMINATOR", 32, 54);
+
+  fctx.fillStyle = '#38bdf8';
+  fctx.font = 'bold 20px "JetBrains Mono", monospace';
+  fctx.fillText("REGULATED D.C. SOURCE (2V-12V)", 32, 92);
+
+  const vOpts = ["2V", "4V", "6V", "8V", "10V", "12V"];
+  fctx.fillStyle = '#f8fafc';
+  fctx.font = 'bold 22px "JetBrains Mono", monospace';
+  vOpts.forEach((v, idx) => {
+    const ang = Math.PI * 0.75 + idx * 0.32;
+    const x = 256 + Math.cos(ang) * 95;
+    const y = 220 + Math.sin(ang) * 95;
+    fctx.fillText(v, x - 16, y + 8);
+  });
+
+  const faceMesh = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.68, 1.68),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(fCanvas) })
+  );
+  faceMesh.position.set(0, 0.9, 1.01);
+  group.add(faceMesh);
+
+  eliminatorKnob = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.28, 0.28, 0.2, 24),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.25 })
+  );
+  eliminatorKnob.rotation.x = Math.PI / 2;
+  eliminatorKnob.position.set(0, 0.76, 1.12);
+  group.add(eliminatorKnob);
+
+  const eliminatorLed = new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.3, 0.08),
+    new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xef4444,
+      emissiveIntensity: 0.9
+    })
+  );
+  eliminatorLed.position.set(-0.85, 0.76, 1.05);
+  group.add(eliminatorLed);
+
+  const tPos = makeTerminal('battery_pos', true);
+  tPos.position.set(0.7, 0.45, 1.15);
+  group.add(tPos);
+
+  const tNeg = makeTerminal('battery_neg', false);
+  tNeg.position.set(-0.7, 0.45, 1.15);
+  group.add(tNeg);
+
+  create3DBadge("BATTERY ELIMINATOR", 2.4, group);
+  group.position.set(-6.2, 0, -2.5);
+  scene.add(group);
+}
+
+function buildStandardResistor() {
+  const group = new THREE.Group();
+
+  const body = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.6, 0.6, 0.65, 32),
+    new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.4 })
+  );
+  body.position.y = 0.325;
+  group.add(body);
+
+  const rim = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.63, 0.63, 0.08, 32),
+    new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.3 })
+  );
+  rim.position.y = 0.63;
+  group.add(rim);
+
+  const cCanvas = document.createElement('canvas');
+  cCanvas.width = 512; cCanvas.height = 512;
+  const cctx = cCanvas.getContext('2d');
+  cctx.fillStyle = '#18181b';
+  cctx.fillRect(0, 0, 512, 512);
+
+  cctx.strokeStyle = '#ffffff';
+  cctx.lineWidth = 6;
+  cctx.beginPath(); cctx.arc(256, 256, 230, 0, Math.PI * 2); cctx.stroke();
+
+  cctx.fillStyle = '#ffffff';
+  cctx.font = 'bold 44px "Plus Jakarta Sans", sans-serif';
+  cctx.textAlign = 'center';
+  cctx.fillText("STANDARD RESISTOR", 256, 170);
+
+  cctx.font = 'bold 96px "JetBrains Mono", monospace';
+  cctx.fillText("2.0 Ω", 256, 285);
+
+  cctx.font = 'bold 30px "JetBrains Mono", monospace';
+  cctx.fillStyle = '#94a3b8';
+  cctx.fillText("±0.1% NON-INDUCTIVE", 256, 360);
+
+  const topPlate = new THREE.Mesh(
+    new THREE.CircleGeometry(0.58, 32),
+    new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(cCanvas) })
+  );
+  topPlate.rotation.x = -Math.PI / 2;
+  topPlate.position.y = 0.665;
+  group.add(topPlate);
+
+  const t1 = makeTerminal('resistor_t1');
+  t1.position.set(-0.4, 0.65, 0);
+  group.add(t1);
+
+  const t2 = makeTerminal('resistor_t2');
+  t2.position.set(0.4, 0.65, 0);
+  group.add(t2);
+
+  create3DBadge("STANDARD RESISTOR (2.0 Ω)", 1.7, group);
+  group.position.set(0, 0, -2.8);
+  scene.add(group);
+  standardResistorGroup = group;
+}
+
+function buildResistanceBox() {
+  const group = new THREE.Group();
+
+  const box = new THREE.Mesh(
+    new THREE.BoxGeometry(3.2, 0.85, 1.6),
+    new THREE.MeshStandardMaterial({ color: 0x9a5b28, roughness: 0.35 })
+  );
+  box.position.y = 0.425;
+  group.add(box);
+
+  const deck = new THREE.Mesh(
+    new THREE.BoxGeometry(3.1, 0.08, 1.5),
+    new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.25 })
+  );
+  deck.position.y = 0.89;
+  group.add(deck);
+
+  const brassMat = new THREE.MeshStandardMaterial({
+    color: 0xd4af37,
+    metalness: 0.95,
+    roughness: 0.15
+  });
+
+  const plugVals = [1, 2, 2, 5, 10, 20, 50];
+  const startX = -1.2;
+  const gap = 0.4;
+
+  plugVals.forEach((val, i) => {
+    const px = startX + i * gap;
+    const block = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.16, 0.6), brassMat);
+    block.position.set(px, 1.0, 0);
+    group.add(block);
+
+    const plugGroup = new THREE.Group();
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.04, 0.28, 16), brassMat);
+    pin.position.y = 0.14;
+    plugGroup.add(pin);
+
+    const head = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.14, 0.12, 0.25, 16),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3 })
+    );
+    head.position.y = 0.35;
+    plugGroup.add(head);
+
+    // Initial state: default 1.0 Ω (first 1Ω plug pulled out)
+    const isOutDefault = (i === 0);
+    plugGroup.position.set(px, isOutDefault ? 1.58 : 0.98, 0);
+    plugGroup.userData = { isPlug: true, val: val, isOut: isOutDefault, homeY: 0.98 };
+    group.add(plugGroup);
+    rbPlugs[val + '_' + i] = plugGroup;
+  });
+
+  const t1 = makeTerminal('rb_t1');
+  t1.position.set(-1.4, 0.95, 0.4);
+  group.add(t1);
+
+  const t2 = makeTerminal('rb_t2');
+  t2.position.set(1.4, 0.95, 0.4);
+  group.add(t2);
+
+  create3DBadge("RESISTANCE BOX (R.B.)", 2.0, group);
+  group.position.set(6.8, 0, -2.4);
+  scene.add(group);
+  rbGroup = group;
+}
+
+function buildPlugKey() {
+  const group = new THREE.Group();
+
+  const base = new THREE.Mesh(
+    new THREE.BoxGeometry(1.6, 0.25, 1.1),
+    new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3 })
+  );
+  base.position.y = 0.125;
+  group.add(base);
+
+  const brassMat = new THREE.MeshStandardMaterial({
+    color: 0xd4af37,
+    metalness: 0.95,
+    roughness: 0.15
+  });
+
+  const b1 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 0.7), brassMat);
+  b1.position.set(-0.35, 0.31, 0);
+  group.add(b1);
+
+  const b2 = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.18, 0.7), brassMat);
+  b2.position.set(0.35, 0.31, 0);
+  group.add(b2);
+
+  const keyPinGroup = new THREE.Group();
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.05, 0.28, 16), brassMat);
+  pin.position.y = 0.14;
+  keyPinGroup.add(pin);
+
+  const handle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.18, 0.16, 0.35, 16),
+    new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 })
+  );
+  handle.position.y = 0.4;
+  keyPinGroup.add(handle);
+
+  // Defaults to OPEN (Y = 0.95)
+  keyPinGroup.position.set(0, 0.95, 0);
+  keyPinGroup.userData = { isKeyPlug: true };
+  group.add(keyPinGroup);
+  plugKeyPin = keyPinGroup;
+
+  const t1 = makeTerminal('key_t1');
+  t1.position.set(-0.4, 0.38, 0.4);
+  group.add(t1);
+
+  const t2 = makeTerminal('key_t2');
+  t2.position.set(0.4, 0.38, 0.4);
+  group.add(t2);
+
+  create3DBadge("PLUG KEY (K)", 1.4, group);
+  group.position.set(5.2, 0, -0.4);
+  scene.add(group);
+}
+
+function buildApparatus() {
+  const amm = buildEdmMeter("DC Ammeter (0–1A)", "A", 1.0, false);
+  amm.group.position.set(-2.8, 0, -2.5);
+  scene.add(amm.group);
+  needleAmmeterMesh = amm.needle;
+  dialTextureAmm = amm.texture;
+
+  const volt = buildEdmMeter("DC Voltmeter (0–5V)", "V", 5.0, true);
+  volt.group.position.set(2.8, 0, -2.5);
+  scene.add(volt.group);
+  needleVoltmeterMesh = volt.needle;
+  dialTextureVolt = volt.texture;
+
+  buildMeterBridge();
+  buildBatteryEliminator();
+  buildStandardResistor();
+  buildResistanceBox();
+  buildPlugKey();
+}
+
+// =========================================================================
+// 9. TABLETOP CABLE ROUTING
+// =========================================================================
+function createTabletopCable(p1, p2, colorHex = 0xef4444) {
+  const pt0 = p1.clone();
+
+  const zOffset1 = (p1.z < 0) ? Math.min(p1.z + 1.2, -0.4) : (p1.z - 0.8);
+  const pt1 = new THREE.Vector3(p1.x, Math.max(p1.y - 0.15, 0.25), zOffset1);
+
+  const midX = (p1.x + p2.x) * 0.5;
+  const benchZ = Math.sin(midX * 0.5) * 0.25 + 0.1;
+  const pt2 = new THREE.Vector3(midX, 0.08, benchZ);
+
+  const zOffset2 = (p2.z < 0) ? Math.min(p2.z + 1.2, -0.4) : (p2.z - 0.8);
+  const pt3 = new THREE.Vector3(p2.x, Math.max(p2.y - 0.15, 0.25), zOffset2);
+
+  const pt4 = p2.clone();
+
+  const curve = new THREE.CatmullRomCurve3([pt0, pt1, pt2, pt3, pt4]);
+  const geom = new THREE.TubeGeometry(curve, 64, 0.045, 12, false);
+  const mat = new THREE.MeshStandardMaterial({
+    color: colorHex,
+    roughness: 0.35,
+    metalness: 0.15
+  });
+  const cableMesh = new THREE.Mesh(geom, mat);
+  scene.add(cableMesh);
+
+  const lugMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.95, roughness: 0.15 });
+  const bootMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+
+  const lug1Group = new THREE.Group();
+  const spade1 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.12, 16), lugMat);
+  const boot1 = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.16, 16), bootMat);
+  boot1.position.y = -0.1;
+  lug1Group.add(spade1);
+  lug1Group.add(boot1);
+  lug1Group.position.copy(p1);
+  scene.add(lug1Group);
+  cableMesh.userData.lug1 = lug1Group;
+
+  const lug2Group = new THREE.Group();
+  const spade2 = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.12, 16), lugMat);
+  const boot2 = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.16, 16), bootMat);
+  boot2.position.y = -0.1;
+  lug2Group.add(spade2);
+  lug2Group.add(boot2);
+  lug2Group.position.copy(p2);
+  scene.add(lug2Group);
+  cableMesh.userData.lug2 = lug2Group;
+
+  return cableMesh;
+}
+
+function updateDanglingWire(cursor3D) {
+  if (!selectedTerminalId || !cursor3D) {
+    if (danglingWireMesh) {
+      scene.remove(danglingWireMesh);
+      if (danglingWireMesh.geometry) danglingWireMesh.geometry.dispose();
+      danglingWireMesh = null;
+    }
+    if (danglingTipMesh) {
+      scene.remove(danglingTipMesh);
+      danglingTipMesh = null;
+    }
+    return;
+  }
+
+  const p1 = terminals[selectedTerminalId];
+  if (!p1) return;
+
+  const mid = new THREE.Vector3().addVectors(p1, cursor3D).multiplyScalar(0.5);
+  mid.y = Math.min(p1.y, cursor3D.y) - 0.4;
+  if (mid.y < 0.2) mid.y = 0.2;
+
+  const curve = new THREE.CatmullRomCurve3([p1, mid, cursor3D]);
+  const geom = new THREE.TubeGeometry(curve, 32, 0.045, 12, false);
+
+  const steps = (currentProcedure === 'A') ? tutorialStepsA : tutorialStepsB;
+  const stepMatch = steps.find(s => s.from === selectedTerminalId || s.to === selectedTerminalId);
+  const wireColor = stepMatch ? stepMatch.color : 0xef4444;
+
+  if (!danglingWireMesh) {
+    const mat = new THREE.MeshStandardMaterial({
+      color: wireColor,
+      roughness: 0.3,
+      metalness: 0.2
+    });
+    danglingWireMesh = new THREE.Mesh(geom, mat);
+    scene.add(danglingWireMesh);
+  } else {
+    danglingWireMesh.material.color.setHex(wireColor);
+    danglingWireMesh.geometry.dispose();
+    danglingWireMesh.geometry = geom;
+  }
+
+  if (!danglingTipMesh) {
+    const tipGroup = new THREE.Group();
+    const pin = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.04, 0.04, 0.26, 16),
+      new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.95, roughness: 0.15 })
+    );
+    const sleeve = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.07, 0.32, 16),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 })
+    );
+    sleeve.position.y = 0.2;
+    tipGroup.add(pin);
+    tipGroup.add(sleeve);
+    danglingTipMesh = tipGroup;
+    scene.add(danglingTipMesh);
+  }
+  danglingTipMesh.position.copy(cursor3D);
+}
+
+function setupDynamicJockeyWire() {
+  if (dynamicWireMesh) {
+    scene.remove(dynamicWireMesh);
+    if (dynamicWireMesh.geometry) dynamicWireMesh.geometry.dispose();
+    dynamicWireMesh = null;
+  }
+
+  const p1 = terminals.voltmeter_neg;
+  const p2 = terminals.jockey_top;
+  const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+  mid.y = 0.35;
+
+  const curve = new THREE.CatmullRomCurve3([p1, mid, p2]);
+  const geom = new THREE.TubeGeometry(curve, 32, 0.045, 12, false);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
+  dynamicWireMesh = new THREE.Mesh(geom, mat);
+  scene.add(dynamicWireMesh);
+}
+
+function updateDynamicJockeyWire() {
+  if (!dynamicWireMesh) return;
+  const p1 = terminals.voltmeter_neg;
+  const p2 = terminals.jockey_top;
+  const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5);
+  mid.y = 0.3 + Math.sin((jockeyL / 100) * Math.PI) * 0.25;
+
+  const curve = new THREE.CatmullRomCurve3([p1, mid, p2]);
+  dynamicWireMesh.geometry.dispose();
+  dynamicWireMesh.geometry = new THREE.TubeGeometry(curve, 32, 0.045, 12, false);
+}
+
+function addWireConnection(fromId, toId, colorHex = 0xef4444) {
+  const p1 = terminals[fromId];
+  const p2 = terminals[toId];
+  if (!p1 || !p2) return null;
+
+  const exists = connectedWires.find(w =>
+    (w.from === fromId && w.to === toId) || (w.from === toId && w.to === fromId)
+  );
+  if (exists) {
+    showToast("These terminals are already connected!", "info");
+    return null;
+  }
+
+  let mesh = null;
+  if ((fromId === 'voltmeter_neg' && toId === 'jockey_top') || (fromId === 'jockey_top' && toId === 'voltmeter_neg')) {
+    setupDynamicJockeyWire();
+    mesh = dynamicWireMesh;
+  } else {
+    mesh = createTabletopCable(p1, p2, colorHex);
+  }
+
+  const wireData = {
+    id: `wire_${fromId}_${toId}`,
+    from: fromId,
+    to: toId,
+    color: colorHex,
+    mesh: mesh
+  };
+  connectedWires.push(wireData);
+  AudioSys.playSnap();
+
+  checkCircuitCompleteness();
+  return wireData;
+}
+
+window.undoLastWire = function() {
+  if (connectedWires.length === 0) {
+    showToast("No wires to undo!", "info");
+    return;
+  }
+  const last = connectedWires.pop();
+  if (last) {
+    if (last.mesh === dynamicWireMesh) {
+      scene.remove(dynamicWireMesh);
+      dynamicWireMesh = null;
+    } else if (last.mesh) {
+      scene.remove(last.mesh);
+      if (last.mesh.geometry) last.mesh.geometry.dispose();
+      if (last.mesh.material) last.mesh.material.dispose();
+      if (last.mesh.userData.lug1) scene.remove(last.mesh.userData.lug1);
+      if (last.mesh.userData.lug2) scene.remove(last.mesh.userData.lug2);
+    }
+  }
+  AudioSys.playClick();
+  showToast("Removed last wire connection.", "info");
+
+  if (currentTutorialStepIdx > 0) {
+    currentTutorialStepIdx--;
+    updateTutorialStep();
+  }
+
+  checkCircuitCompleteness();
+};
+
+window.resetAllWires = function() {
+  connectedWires.forEach(w => {
+    if (w.mesh === dynamicWireMesh) {
+      scene.remove(dynamicWireMesh);
+      dynamicWireMesh = null;
+    } else if (w.mesh) {
+      scene.remove(w.mesh);
+      if (w.mesh.userData.lug1) scene.remove(w.mesh.userData.lug1);
+      if (w.mesh.userData.lug2) scene.remove(w.mesh.userData.lug2);
+    }
+  });
+  connectedWires = [];
+  currentTutorialStepIdx = 0;
+  updateTutorialStep();
+  checkCircuitCompleteness();
+  AudioSys.playClick();
+  showToast("All wires removed. Workbench ready for wiring.", "info");
+};
+
+// =========================================================================
+// 10. STEP-BY-STEP AUTOMATED WIRING
+// =========================================================================
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+let isAutoWiringInProgress = false;
+window.autoWireAll = async function() {
+  if (isAutoWiringInProgress) return;
+  isAutoWiringInProgress = true;
+
+  resetAllWires();
+  showToast("Starting Step-by-Step Guided Wiring Walkthrough...", "info");
+  await sleep(1000);
+
+  const steps = (currentProcedure === 'A') ? tutorialStepsA : tutorialStepsB;
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    currentTutorialStepIdx = i;
+    updateTutorialStep();
+
+    showToast(`Step ${i + 1} of ${steps.length}: ${s.title}`, "info");
+    await sleep(1500);
+
+    addWireConnection(s.from, s.to, s.color);
+    await sleep(1200);
+  }
+
+  currentTutorialStepIdx = steps.length;
+  updateTutorialStep();
+
+  AudioSys.playMutedBeep();
+  showToast(`All ${steps.length} wires connected! Circuit complete.`, "success");
+  await sleep(400);
+
+  isCircuitComplete = true;
+  updatePhysics();
+
+  isAutoWiringInProgress = false;
+};
+
+function checkCircuitCompleteness() {
+  const steps = (currentProcedure === 'A') ? tutorialStepsA : tutorialStepsB;
+  const reqConnections = steps.map(s => [s.from, s.to]);
+  let allConnected = true;
+
+  reqConnections.forEach(([f, t]) => {
+    const found = connectedWires.find(w =>
+      (w.from === f && w.to === t) || (w.from === t && w.to === f)
+    );
+    if (!found) allConnected = false;
+  });
+
+  isCircuitComplete = allConnected;
+  if (isCircuitComplete) {
+    AudioSys.playMutedBeep();
+    showToast("Circuit connections complete.", "success");
+  }
+  updatePhysics();
+}
+
+// =========================================================================
+// 11. TUTORIAL UI & MANUAL LOGIC
+// =========================================================================
+function updateTutorialStep() {
+  Object.values(terminalHalos).forEach(h => {
+    if (h && h.material) h.material.opacity = 0.0;
+  });
+
+  const steps = (currentProcedure === 'A') ? tutorialStepsA : tutorialStepsB;
+
+  if (currentTutorialStepIdx >= steps.length) {
+    document.getElementById('step-badge-text').textContent = "CIRCUIT COMPLETE";
+    document.getElementById('step-title-text').textContent = "Ready for Observations";
+    document.getElementById('step-desc-text').innerHTML =
+      currentProcedure === 'A'
+        ? "All wires are connected!<br><br>👉 <strong>Close the Plug Key (K)</strong>, slide the Jockey along wire AB (30 cm to 100 cm), and click <strong>Record Data</strong>."
+        : "Procedure B circuit is connected!<br><br>👉 <strong>Close the Plug Key (K)</strong>, dial Resistance Box (1 Ω to 5 Ω), and click <strong>Record Data</strong> to verify Ohm's law ($V = I \\cdot R$).";
+    document.getElementById('btn-connect-current-wire').style.display = 'none';
+    return;
+  }
+
+  const s = steps[currentTutorialStepIdx];
+  document.getElementById('step-badge-text').textContent = `PROCEDURE ${currentProcedure} — STEP ${currentTutorialStepIdx + 1} OF ${steps.length}`;
+  document.getElementById('step-title-text').textContent = s.title;
+  document.getElementById('step-desc-text').innerHTML = s.desc;
+  document.getElementById('btn-connect-current-wire').style.display = 'flex';
+
+  if (terminalHalos[s.from]) terminalHalos[s.from].material.opacity = 0.85;
+  if (terminalHalos[s.to]) terminalHalos[s.to].material.opacity = 0.85;
+}
+
+window.connectCurrentTutorialWire = function() {
+  const steps = (currentProcedure === 'A') ? tutorialStepsA : tutorialStepsB;
+  if (currentTutorialStepIdx >= steps.length) return;
+  const s = steps[currentTutorialStepIdx];
+  addWireConnection(s.from, s.to, s.color);
+
+  currentTutorialStepIdx++;
+  updateTutorialStep();
+};
+
+window.nextStep = function() {
+  const steps = (currentProcedure === 'A') ? tutorialStepsA : tutorialStepsB;
+  if (currentTutorialStepIdx < steps.length - 1) {
+    currentTutorialStepIdx++;
+    updateTutorialStep();
+  }
+};
+
+window.prevStep = function() {
+  if (currentTutorialStepIdx > 0) {
+    currentTutorialStepIdx--;
+    updateTutorialStep();
+  }
+};
+
+// =========================================================================
+// 12. PRECISE ISC CLASS XII PHYSICS ENGINE (AUDIT P0 & P1 FIXES)
+// =========================================================================
+function updatePhysics() {
+  let voltage = 0.0;
+  let current = 0.0;
+  isAmmeterOverloaded = false;
+  isVoltmeterOverloaded = false;
+
+  if (isCircuitComplete && isKeyClosed) {
+    if (currentProcedure === 'A') {
+      // PROCEDURE A: Voltmeter across Resistor R + Wire AC (length l)
+      // Main series loop resistance: R + Wire_AB + R_ammeter + R_internal
+      const R_AC = jockeyL * WIRE_LAMBDA;
+      const totalSeriesR = STANDARD_RESISTANCE + WIRE_TOTAL_RESISTANCE + AMMETER_RESISTANCE + INTERNAL_RESISTANCE;
+
+      current = batteryVoltage / totalSeriesR;
+      voltage = current * (STANDARD_RESISTANCE + R_AC);
+    } else {
+      // PROCEDURE B (AUDIT P0 FIX): Resistance Box in series, Voltmeter reads across R.B.
+      // Series loop: Battery, Key, R.B., Ammeter ONLY. No bridge wire in series.
+      const totalSeriesR = rbResistance + AMMETER_RESISTANCE + INTERNAL_RESISTANCE;
+      current = batteryVoltage / (totalSeriesR > 0 ? totalSeriesR : 0.01);
+      voltage = current * rbResistance; // V = I * R_RB across the Resistance Box!
+    }
+  }
+
+  // P1 Audit Fix: Check meter rated ranges (Ammeter 1.0 A, Voltmeter 5.0 V)
+  if (current > 1.05) isAmmeterOverloaded = true;
+  if (voltage > 5.25) isVoltmeterOverloaded = true;
+
+  // Quantize strictly to ISC manual least count specs (Voltmeter 0.05V, Ammeter 0.02A)
+  const quantizedV = (isCircuitComplete && isKeyClosed) ? Math.round(voltage / 0.05) * 0.05 : 0.0;
+  const quantizedI = (isCircuitComplete && isKeyClosed) ? Math.round(current / 0.02) * 0.02 : 0.0;
+
+  const hudV = document.getElementById('hud-voltmeter');
+  const hudA = document.getElementById('hud-ammeter');
+
+  if (isVoltmeterOverloaded) {
+    hudV.textContent = 'OVERLOAD (>5V)';
+    hudV.style.color = '#ef4444';
+  } else {
+    hudV.textContent = `${quantizedV.toFixed(2)} V`;
+    hudV.style.color = '#fff';
+  }
+
+  if (isAmmeterOverloaded) {
+    hudA.textContent = 'OVERLOAD (>1A)';
+    hudA.style.color = '#ef4444';
+  } else {
+    hudA.textContent = `${quantizedI.toFixed(2)} A`;
+    hudA.style.color = '#fff';
+  }
+
+  document.getElementById('hud-jockey').textContent = (currentProcedure === 'A') ? `${jockeyL.toFixed(1)} cm` : `${rbResistance.toFixed(1)} Ω`;
+  document.getElementById('hud-source').textContent = `${batteryVoltage.toFixed(1)} V DC`;
+
+  const keyEl = document.getElementById('hud-key');
+  if (!isCircuitComplete) {
+    keyEl.textContent = 'INCOMPLETE CIRCUIT';
+    keyEl.style.color = '#f59e0b';
+  } else if (!isKeyClosed) {
+    keyEl.textContent = 'KEY OPEN (0 V)';
+    keyEl.style.color = '#ef4444';
+  } else if (isAmmeterOverloaded || isVoltmeterOverloaded) {
+    keyEl.textContent = 'METER OVERLOAD WARNING!';
+    keyEl.style.color = '#ef4444';
+  } else {
+    keyEl.textContent = 'CLOSED (CIRCUIT ACTIVE)';
+    keyEl.style.color = '#10b981';
+  }
+
+  // Set needle target angles
+  setNeedleTarget('ammeter', isAmmeterOverloaded ? 1.05 : current, 1.0);
+  setNeedleTarget('voltmeter', isVoltmeterOverloaded ? 5.25 : voltage, 5.0);
+
+  updateInspectionDials(voltage, current);
+}
+
+function setNeedleTarget(meterKey, val, maxVal) {
+  const clamped = Math.max(0, Math.min(maxVal * 1.08, val));
+  needlePhysics[meterKey].targetAngle = Math.PI * 0.25 - (clamped / maxVal) * (Math.PI * 0.5);
+}
+
+function updateNeedlePhysics() {
+  const dt = 0.016;
+  const springK = 85.0;
+  const dampingC = 14.5;
+
+  ['ammeter', 'voltmeter'].forEach(key => {
+    const p = needlePhysics[key];
+    const displacement = p.currentAngle - p.targetAngle;
+    const springForce = -springK * displacement;
+    const dampingForce = -dampingC * p.velocity;
+    const acceleration = springForce + dampingForce;
+
+    p.velocity += acceleration * dt;
+    p.currentAngle += p.velocity * dt;
+  });
+
+  if (needleAmmeterMesh) needleAmmeterMesh.rotation.z = needlePhysics.ammeter.currentAngle;
+  if (needleVoltmeterMesh) needleVoltmeterMesh.rotation.z = needlePhysics.voltmeter.currentAngle;
+}
+
+function renderLiveDialOnCanvas(canvasId, value, maxVal, symbol, isVoltmeter) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, w, h);
+
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 6;
+  ctx.strokeRect(3, 3, w - 6, h - 6);
+
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 24px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText("EDM-80", 25, 38);
+
+  ctx.fillStyle = '#0284c7';
+  ctx.font = 'bold 22px "Plus Jakarta Sans", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText("Labkafe", w - 25, 36);
+
+  // Anti-Parallax Mirror Strip
+  ctx.fillStyle = '#e2e8f0';
+  ctx.beginPath();
+  ctx.arc(w / 2, 420, 270, Math.PI * 1.25, Math.PI * 1.75);
+  ctx.arc(w / 2, 420, 245, Math.PI * 1.75, Math.PI * 1.25, true);
+  ctx.fill();
+
+  ctx.strokeStyle = '#0f172a';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(w / 2, 420, 272, Math.PI * 1.25, Math.PI * 1.75); ctx.stroke();
+  ctx.beginPath(); ctx.arc(w / 2, 420, 243, Math.PI * 1.25, Math.PI * 1.75); ctx.stroke();
+
+  const divs = 10;
+  ctx.fillStyle = '#0f172a';
+  ctx.font = 'bold 22px "JetBrains Mono", monospace';
+  ctx.textAlign = 'center';
+
+  for (let i = 0; i <= divs; i++) {
+    const frac = i / divs;
+    const ang = Math.PI * 1.25 + frac * (Math.PI * 0.5);
+    const isMaj = (i % 2 === 0);
+    const r1 = 272;
+    const r2 = isMaj ? 315 : 292;
+
+    const x1 = w / 2 + Math.cos(ang) * r1;
+    const y1 = 420 + Math.sin(ang) * r1;
+    const x2 = w / 2 + Math.cos(ang) * r2;
+    const y2 = 420 + Math.sin(ang) * r2;
+
+    ctx.lineWidth = isMaj ? 3.5 : 1.5;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+    if (isMaj) {
+      const val = (frac * maxVal).toFixed(isVoltmeter ? 0 : 1);
+      const tx = w / 2 + Math.cos(ang) * 345;
+      const ty = 420 + Math.sin(ang) * 345;
+      ctx.fillText(val, tx, ty + 8);
+    }
+  }
+
+  ctx.font = 'bold 80px "Plus Jakarta Sans", sans-serif';
+  ctx.fillStyle = isVoltmeter ? '#0284c7' : '#0f172a';
+  ctx.fillText(symbol, w / 2, 290);
+
+  const clamped = Math.max(0, Math.min(maxVal * 1.05, value));
+  const needleAng = Math.PI * 1.25 + (clamped / maxVal) * (Math.PI * 0.5);
+
+  ctx.strokeStyle = '#ef4444';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(w / 2, 420);
+  ctx.lineTo(w / 2 + Math.cos(needleAng) * 330, 420 + Math.sin(needleAng) * 330);
+  ctx.stroke();
+
+  ctx.fillStyle = '#0f172a';
+  ctx.beginPath(); ctx.arc(w / 2, 420, 14, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#d4af37';
+  ctx.beginPath(); ctx.arc(w / 2, 420, 5, 0, Math.PI * 2); ctx.fill();
+}
+
+function updateInspectionDials(voltage, current) {
+  renderLiveDialOnCanvas('canvas-dial-volt', voltage, 5.0, 'V', true);
+  renderLiveDialOnCanvas('canvas-dial-amm', current, 1.0, 'A', false);
+
+  const qV = (isCircuitComplete && isKeyClosed) ? Math.round(voltage / 0.05) * 0.05 : 0.0;
+  const qI = (isCircuitComplete && isKeyClosed) ? Math.round(current / 0.02) * 0.02 : 0.0;
+
+  const inspV = document.getElementById('insp-volt-val');
+  if (inspV) {
+    if (isVoltmeterOverloaded) {
+      inspV.textContent = 'OVERLOAD (> 5.0 V)';
+      inspV.style.color = '#ef4444';
+    } else {
+      inspV.textContent = `${qV.toFixed(2)} V (Raw: ${voltage.toFixed(3)} V)`;
+      inspV.style.color = '#fff';
+    }
+  }
+
+  const inspA = document.getElementById('insp-amm-val');
+  if (inspA) {
+    if (isAmmeterOverloaded) {
+      inspA.textContent = 'OVERLOAD (> 1.0 A)';
+      inspA.style.color = '#ef4444';
+    } else {
+      inspA.textContent = `${qI.toFixed(2)} A (Raw: ${current.toFixed(3)} A)`;
+      inspA.style.color = '#fff';
+    }
+  }
+}
+
+// =========================================================================
+// 13. DYNAMIC SCHEMATIC SVG (AUDIT P0 FIX: PROCEDURE B CIRCUIT)
+// =========================================================================
+function renderSchematicSVG() {
+  const svg = document.getElementById('schematic-svg');
+  if (!svg) return;
+
+  if (currentProcedure === 'A') {
+    svg.innerHTML = `
+      <rect x="0" y="0" width="300" height="100" fill="transparent"/>
+      <!-- Battery -->
+      <line x1="20" y1="35" x2="35" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="35" y1="25" x2="35" y2="45" stroke="#ef4444" stroke-width="3"/>
+      <line x1="40" y1="28" x2="40" y2="42" stroke="#64748b" stroke-width="2"/>
+      <text x="28" y="20" font-family="Plus Jakarta Sans" font-size="9" fill="#94a3b8">2V DC</text>
+      <!-- Ammeter -->
+      <line x1="40" y1="35" x2="70" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <circle cx="85" cy="35" r="13" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+      <text x="85" y="39" font-family="Plus Jakarta Sans" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">A</text>
+      <!-- Resistor R -->
+      <line x1="98" y1="35" x2="130" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <rect x="130" y="28" width="28" height="14" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+      <text x="144" y="39" font-family="Plus Jakarta Sans" font-size="9" font-weight="700" fill="#f59e0b" text-anchor="middle">R=2Ω</text>
+      <!-- Wire AB -->
+      <line x1="158" y1="35" x2="185" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="185" y1="35" x2="265" y2="35" stroke="#e2e8f0" stroke-width="3"/>
+      <text x="185" y="48" font-family="Plus Jakarta Sans" font-size="9" fill="#94a3b8">A</text>
+      <text x="265" y="48" font-family="Plus Jakarta Sans" font-size="9" fill="#94a3b8">B</text>
+      <!-- Jockey C -->
+      <line x1="225" y1="35" x2="225" y2="70" stroke="#0284c7" stroke-width="2"/>
+      <line x1="225" y1="70" x2="114" y2="70" stroke="#0284c7" stroke-width="2"/>
+      <line x1="114" y1="70" x2="114" y2="60" stroke="#0284c7" stroke-width="2"/>
+      <!-- Voltmeter -->
+      <line x1="114" y1="35" x2="114" y2="44" stroke="#ef4444" stroke-width="1.5"/>
+      <circle cx="114" cy="52" r="9" fill="#0f172a" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="114" y="55" font-family="Plus Jakarta Sans" font-size="9" font-weight="700" fill="#ef4444" text-anchor="middle">V</text>
+      <!-- Key K -->
+      <line x1="265" y1="35" x2="275" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="275" y1="35" x2="275" y2="85" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="275" y1="85" x2="245" y2="85" stroke="#38bdf8" stroke-width="2"/>
+      <circle cx="245" cy="85" r="2.5" fill="#10b981"/>
+      <line id="schematic-key-arm" x1="245" y1="85" x2="230" y2="76" stroke="#ef4444" stroke-width="2"/>
+      <circle cx="230" cy="85" r="2.5" fill="#10b981"/>
+      <line x1="230" y1="85" x2="20" y2="85" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="20" y1="85" x2="20" y2="35" stroke="#38bdf8" stroke-width="2"/>
+    `;
+  } else {
+    // Procedure B Schematic: Battery -> Key -> R.B. -> Ammeter. Voltmeter in parallel across R.B.
+    svg.innerHTML = `
+      <rect x="0" y="0" width="300" height="100" fill="transparent"/>
+      <!-- Battery -->
+      <line x1="20" y1="35" x2="45" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="45" y1="25" x2="45" y2="45" stroke="#ef4444" stroke-width="3"/>
+      <line x1="50" y1="28" x2="50" y2="42" stroke="#64748b" stroke-width="2"/>
+      <text x="38" y="20" font-family="Plus Jakarta Sans" font-size="9" fill="#94a3b8">2V DC</text>
+      <!-- Key K -->
+      <line x1="50" y1="35" x2="90" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <circle cx="90" cy="35" r="2.5" fill="#10b981"/>
+      <line id="schematic-key-arm" x1="90" y1="35" x2="105" y2="26" stroke="#ef4444" stroke-width="2"/>
+      <circle cx="105" cy="35" r="2.5" fill="#10b981"/>
+      <!-- Resistance Box R.B. -->
+      <line x1="105" y1="35" x2="140" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <rect x="140" y="28" width="36" height="14" fill="#1e293b" stroke="#f59e0b" stroke-width="2"/>
+      <text x="158" y="39" font-family="Plus Jakarta Sans" font-size="9" font-weight="700" fill="#f59e0b" text-anchor="middle">R.B.</text>
+      <!-- Ammeter -->
+      <line x1="176" y1="35" x2="215" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <circle cx="228" cy="35" r="13" fill="#0f172a" stroke="#38bdf8" stroke-width="2"/>
+      <text x="228" y="39" font-family="Plus Jakarta Sans" font-size="10" font-weight="700" fill="#fff" text-anchor="middle">A</text>
+      <line x1="241" y1="35" x2="275" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="275" y1="35" x2="275" y2="85" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="275" y1="85" x2="20" y2="85" stroke="#38bdf8" stroke-width="2"/>
+      <line x1="20" y1="85" x2="20" y2="35" stroke="#38bdf8" stroke-width="2"/>
+      <!-- Voltmeter across R.B. -->
+      <line x1="135" y1="35" x2="135" y2="65" stroke="#ef4444" stroke-width="1.5"/>
+      <line x1="135" y1="65" x2="150" y2="65" stroke="#ef4444" stroke-width="1.5"/>
+      <circle cx="158" cy="65" r="8" fill="#0f172a" stroke="#ef4444" stroke-width="1.5"/>
+      <text x="158" y="68" font-family="Plus Jakarta Sans" font-size="8" font-weight="700" fill="#ef4444" text-anchor="middle">V</text>
+      <line x1="166" y1="65" x2="181" y2="65" stroke="#ef4444" stroke-width="1.5"/>
+      <line x1="181" y1="65" x2="181" y2="35" stroke="#ef4444" stroke-width="1.5"/>
+    `;
+  }
+}
+
+// =========================================================================
+// 14. POINTER & INTERACTION HANDLERS
+// =========================================================================
+function onPointerDown(e) {
+  if (e.target.id !== 'canvas3d') return;
+
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersects = raycaster.intersectObjects(scene.children, true);
+  for (let hit of intersects) {
+    let obj = hit.object;
+    while (obj && obj !== scene) {
+      if (obj.userData && obj.userData.isJockeyHitbox) {
+        if (currentProcedure === 'A') {
+          isDraggingJockey = true;
+          controls.enabled = false;
+          document.body.style.cursor = 'ew-resize';
+        }
+        return;
+      }
+      obj = obj.parent;
+    }
+  }
+}
+
+function onPointerMove(e) {
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  if (isDraggingJockey) {
+    const hitPoint = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(dragPlane, hitPoint)) {
+      const clampedX = Math.max(-5.0, Math.min(5.0, hitPoint.x));
+      const newL = ((clampedX + 5.0) / 10.0) * 100.0;
+      jockeyL = Math.round(newL * 2) / 2;
+
+      document.getElementById('slider-jockey').value = jockeyL;
+      document.getElementById('jockey-badge').textContent = `${jockeyL.toFixed(1)} cm`;
+      updateJockey3D();
+      updatePhysics();
+
+      if (Math.random() < 0.15) AudioSys.playFriction();
+    }
+    return;
+  }
+
+  if (selectedTerminalId) {
+    const airPos = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(midAirPlane, airPos)) {
+      updateDanglingWire(airPos);
+    }
+    document.body.style.cursor = 'crosshair';
+    return;
+  }
+
+  const intersects = raycaster.intersectObjects(scene.children, true);
+  let foundTerminal = false;
+  for (let hit of intersects) {
+    if (hit.object.userData && hit.object.userData.isTerminalHitbox) {
+      document.body.style.cursor = 'pointer';
+      foundTerminal = true;
+      break;
+    }
+  }
+  if (!foundTerminal && !isDraggingJockey) {
+    document.body.style.cursor = 'default';
+  }
+}
+
+function onPointerUp() {
+  if (isDraggingJockey) {
+    isDraggingJockey = false;
+    controls.enabled = true;
+    document.body.style.cursor = 'default';
+  }
+}
+
+function onKeyDown(e) {
+  if (e.key === 'Escape' && selectedTerminalId) {
+    cancelDanglingWire();
+  }
+}
+
+function cancelDanglingWire() {
+  if (selectedTerminalId) {
+    if (terminalHalos[selectedTerminalId]) {
+      terminalHalos[selectedTerminalId].material.opacity = 0.0;
+    }
+    selectedTerminalId = null;
+    updateDanglingWire(null);
+    document.getElementById('wiring-status-banner').style.display = 'none';
+    showToast("Cancelled wiring.", "info");
+    updateTutorialStep();
+  }
+}
+
+function onCanvasClick(e) {
+  if (e.target.id !== 'canvas3d' || isDraggingJockey) return;
+
+  mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersects = raycaster.intersectObjects(scene.children, true);
+  for (let hit of intersects) {
+    let obj = hit.object;
+
+    if (obj.userData && obj.userData.isTerminalHitbox) {
+      handleTerminalClick(obj.userData.terminalId);
+      return;
+    }
+
+    while (obj && obj !== scene) {
+      if (obj.userData) {
+        if (obj.userData.isKeyPlug) {
+          togglePlugKey();
+          return;
+        }
+        if (obj.userData.isPlug) {
+          toggleRbPlug(obj);
+          return;
+        }
+        if (obj.userData.isMeter) {
+          setCameraPreset('meters');
+          toggleWindow('win-meters-inspection');
+          return;
+        }
+      }
+      obj = obj.parent;
+    }
+  }
+
+  if (selectedTerminalId) {
+    cancelDanglingWire();
+  }
+}
+
+function handleTerminalClick(termId) {
+  AudioSys.playClick();
+
+  if (!selectedTerminalId) {
+    selectedTerminalId = termId;
+    if (terminalHalos[termId]) terminalHalos[termId].material.opacity = 1.0;
+
+    const banner = document.getElementById('wiring-status-banner');
+    banner.style.display = 'flex';
+    document.getElementById('wiring-status-text').textContent =
+      `Wire attached to ${termId}. Click destination terminal to connect.`;
+    showToast(`Anchored wire at ${termId}. Click destination terminal.`, "info");
+  } else {
+    const from = selectedTerminalId;
+    const to = termId;
+
+    if (terminalHalos[from]) terminalHalos[from].material.opacity = 0.0;
+    selectedTerminalId = null;
+    updateDanglingWire(null);
+
+    const banner = document.getElementById('wiring-status-banner');
+    banner.style.display = 'none';
+
+    if (from === to) {
+      showToast("Deselected terminal.", "info");
+      updateTutorialStep();
+      return;
+    }
+
+    const steps = (currentProcedure === 'A') ? tutorialStepsA : tutorialStepsB;
+    const stepMatch = steps.find(s =>
+      (s.from === from && s.to === to) || (s.from === to && s.to === from)
+    );
+    const colorHex = stepMatch ? stepMatch.color : 0xf97316;
+
+    addWireConnection(from, to, colorHex);
+
+    if (stepMatch) {
+      showToast(`Connected ${stepMatch.title}!`, "success");
+      if (currentTutorialStepIdx < steps.length) {
+        currentTutorialStepIdx++;
+        updateTutorialStep();
+      }
+    } else {
+      showToast(`Connected wire between ${from} and ${to}.`, "info");
+    }
+  }
+}
+
+window.togglePlugKey = function() {
+  isKeyClosed = !isKeyClosed;
+  AudioSys.playClick();
+
+  const btnKey = document.getElementById('btn-key');
+  const btnText = document.getElementById('btn-key-text');
+  const arm = document.getElementById('schematic-key-arm');
+
+  if (isKeyClosed) {
+    btnKey.className = 'btn-key-toggle closed';
+    btnText.textContent = 'Key: CLOSED';
+    if (plugKeyPin) plugKeyPin.position.y = 0.32;
+    if (arm) {
+      if (currentProcedure === 'A') arm.setAttribute('y2', '85');
+      else arm.setAttribute('y2', '35');
+      arm.setAttribute('stroke', '#10b981');
+    }
+    showToast("Plug key inserted. Circuit is closed.", "success");
+  } else {
+    btnKey.className = 'btn-key-toggle open';
+    btnText.textContent = 'Key: OPEN';
+    if (plugKeyPin) plugKeyPin.position.y = 0.95;
+    if (arm) {
+      if (currentProcedure === 'A') arm.setAttribute('y2', '76');
+      else arm.setAttribute('y2', '26');
+      arm.setAttribute('stroke', '#ef4444');
+    }
+    showToast("Plug key removed. Circuit is open (0 V).", "warn");
+  }
+  updatePhysics();
+};
+
+function toggleRbPlug(plugObj) {
+  plugObj.userData.isOut = !plugObj.userData.isOut;
+  AudioSys.playClick();
+
+  if (plugObj.userData.isOut) {
+    plugObj.position.y = plugObj.userData.homeY + 0.6;
+    rbResistance += plugObj.userData.val;
+    showToast(`Removed ${plugObj.userData.val} Ω plug (Total R.B. = ${rbResistance} Ω)`, "info");
+  } else {
+    plugObj.position.y = plugObj.userData.homeY;
+    rbResistance -= plugObj.userData.val;
+    showToast(`Inserted ${plugObj.userData.val} Ω plug (Total R.B. = ${rbResistance} Ω)`, "info");
+  }
+  document.getElementById('rb-badge').textContent = `${rbResistance.toFixed(1)} Ω`;
+  updatePhysics();
+}
+
+window.onJockeySliderInput = function(val) {
+  jockeyL = parseFloat(val);
+  document.getElementById('jockey-badge').textContent = `${jockeyL.toFixed(1)} cm`;
+  updateJockey3D();
+  updatePhysics();
+  AudioSys.playFriction();
+};
+
+window.onVoltageChange = function(val) {
+  batteryVoltage = parseFloat(val);
+  AudioSys.playClick();
+  if (eliminatorKnob) {
+    const vIdx = [2, 4, 6, 8, 10, 12].indexOf(batteryVoltage);
+    eliminatorKnob.rotation.z = -vIdx * 0.35;
+  }
+  showToast(`Battery Eliminator set to ${batteryVoltage.toFixed(1)} V DC`, "info");
+  updatePhysics();
+};
+
+window.switchProcedure = function(proc) {
+  currentProcedure = proc;
+  document.getElementById('tab-proc-a').className = 'proc-tab' + (proc === 'A' ? ' active' : '');
+  document.getElementById('tab-proc-b').className = 'proc-tab' + (proc === 'B' ? ' active' : '');
+
+  resetAllWires();
+
+  // Audit P0 Fix: In Procedure B, bridge wire and standard resistor are visually dimmed
+  if (meterBridgeGroup) meterBridgeGroup.visible = (proc === 'A');
+  if (standardResistorGroup) standardResistorGroup.visible = (proc === 'A');
+
+  const dockJockey = document.getElementById('dock-jockey-group');
+  const dockRB = document.getElementById('dock-rb-group');
+  if (proc === 'A') {
+    dockJockey.style.display = 'flex';
+    dockRB.style.display = 'none';
+    document.getElementById('manual-formula-display').textContent = 'λ = (S × R) / V₀';
+    document.getElementById('manual-formula-desc').innerHTML = 'Where <strong>S</strong> = Slope (ΔV/Δl), <strong>R</strong> = 2.0 Ω standard resistor, <strong>V₀</strong> = Y-intercept when l = 0.';
+    document.getElementById('table-title-text').textContent = "ISC Observation Table — Procedure A";
+    document.getElementById('graph-window-title').textContent = "Real-time Graph (V vs l)";
+    document.getElementById('lbl-slope-type').textContent = "S = ΔV/Δl";
+    document.getElementById('lbl-intercept-type').textContent = "V₀";
+  } else {
+    dockJockey.style.display = 'none';
+    dockRB.style.display = 'flex';
+    document.getElementById('manual-formula-display').textContent = 'V = I × R_RB (Ohm\'s Law)';
+    document.getElementById('manual-formula-desc').innerHTML = 'Dial <strong>Resistance Box R.B.</strong> (1 Ω to 5 Ω) to record pairs of <strong>(V, I)</strong> and verify Ohm\'s Law.';
+    document.getElementById('table-title-text').textContent = "ISC Observation Table — Procedure B (Ohm's Law)";
+    document.getElementById('graph-window-title').textContent = "Real-time Graph (V vs I)";
+    document.getElementById('lbl-slope-type').textContent = "R_slope";
+    document.getElementById('lbl-intercept-type').textContent = "V_offset";
+  }
+
+  renderSchematicSVG();
+  updateTableHeaders();
+  updateTableUI();
+  updatePhysics();
+  updateGraph();
+
+  AudioSys.playClick();
+  showToast(`Switched to Procedure ${proc}. Workbench reconfigured.`, "info");
+};
+
+// =========================================================================
+// 15. OBSERVATION TABLES & REGRESSION GRAPH (AUDIT P0 FIX: OHM'S LAW)
+// =========================================================================
+function updateTableHeaders() {
+  const thead = document.getElementById('obs-thead');
+  if (!thead) return;
+
+  if (currentProcedure === 'A') {
+    // 4 standard columns per ISC Manual
+    thead.innerHTML = `
+      <tr>
+        <th>S.No.</th>
+        <th>l (cm)</th>
+        <th>V (volts)</th>
+        <th>I (amp)</th>
+      </tr>
+    `;
+  } else {
+    // Procedure B: S.No., R.B. dialled, V, I, V/I
+    thead.innerHTML = `
+      <tr>
+        <th>S.No.</th>
+        <th>R.B. (Ω)</th>
+        <th>V (volts)</th>
+        <th>I (amp)</th>
+        <th>V/I (Ω)</th>
+      </tr>
+    `;
+  }
+}
+
+window.recordObservation = function() {
+  if (!isCircuitComplete) {
+    AudioSys.playClick();
+    showToast("Please complete all wiring before recording data.", "warn");
+    return;
+  }
+  if (!isKeyClosed) {
+    AudioSys.playClick();
+    showToast("Insert the Plug Key (K) to close the circuit before taking readings.", "warn");
+    return;
+  }
+  if (isAmmeterOverloaded || isVoltmeterOverloaded) {
+    AudioSys.playClick();
+    showToast("Cannot record: Meter is in OVERLOAD state. Reduce voltage or increase resistance.", "warn");
+    return;
+  }
+
+  const list = (currentProcedure === 'A') ? readingsA : readingsB;
+  const vStr = document.getElementById('hud-voltmeter').textContent.replace(' V', '');
+  const iStr = document.getElementById('hud-ammeter').textContent.replace(' A', '');
+  const vVal = parseFloat(vStr);
+  const iVal = parseFloat(iStr);
+  const ratio = (iVal > 0) ? (vVal / iVal).toFixed(2) : '0.00';
+
+  const entry = {
+    idx: list.length + 1,
+    param: (currentProcedure === 'A') ? jockeyL : rbResistance,
+    v: vVal,
+    i: iVal,
+    ratio: ratio
+  };
+  list.push(entry);
+
+  updateTableUI();
+  AudioSys.playMutedBeep();
+  showToast(`Recorded Obs #${entry.idx}: V = ${entry.v.toFixed(2)} V, I = ${entry.i.toFixed(2)} A`, "success");
+
+  updateGraph();
+};
+
+function updateTableUI() {
+  const list = (currentProcedure === 'A') ? readingsA : readingsB;
+  const tbody = document.getElementById('obs-tbody');
+  tbody.innerHTML = '';
+
+  list.forEach(entry => {
+    const tr = document.createElement('tr');
+    if (currentProcedure === 'A') {
+      tr.innerHTML = `
+        <td>${entry.idx}</td>
+        <td>${entry.param.toFixed(1)}</td>
+        <td>${entry.v.toFixed(2)}</td>
+        <td>${entry.i.toFixed(2)}</td>
+      `;
+    } else {
+      tr.innerHTML = `
+        <td>${entry.idx}</td>
+        <td>${entry.param.toFixed(1)}</td>
+        <td>${entry.v.toFixed(2)}</td>
+        <td>${entry.i.toFixed(2)}</td>
+        <td>${entry.ratio}</td>
+      `;
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+window.clearReadings = function() {
+  if (currentProcedure === 'A') readingsA.length = 0;
+  else readingsB.length = 0;
+  updateTableUI();
+  updateGraph();
+  AudioSys.playClick();
+  showToast("Cleared observation table.", "info");
+};
+
+window.exportCSV = function() {
+  const list = (currentProcedure === 'A') ? readingsA : readingsB;
+  if (list.length === 0) {
+    showToast("No data to export!", "warn");
+    return;
+  }
+  const col1 = (currentProcedure === 'A') ? "Length_cm" : "Resistance_RB_Ohm";
+  let csv = `SNo,${col1},Voltage_V,Current_A,Ratio_Ohm\n`;
+  list.forEach(r => {
+    csv += `${r.idx},${r.param},${r.v},${r.i},${r.ratio}\n`;
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `ISC_Physics_Exp12_Proc${currentProcedure}_Readings.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Exported CSV successfully.", "success");
+};
+
+let graphCanvas, gctx;
+function initGraph() {
+  graphCanvas = document.getElementById('graphCanvas');
+  if (graphCanvas) gctx = graphCanvas.getContext('2d');
+  updateGraph();
+}
+
+function updateGraph() {
+  if (!gctx) return;
+  const w = graphCanvas.width;
+  const h = graphCanvas.height;
+
+  gctx.fillStyle = '#070a13';
+  gctx.fillRect(0, 0, w, h);
+
+  // Grid
+  gctx.strokeStyle = 'rgba(255, 255, 255, 0.06)';
+  gctx.lineWidth = 1;
+  for (let x = 45; x < w; x += 35) {
+    gctx.beginPath(); gctx.moveTo(x, 0); gctx.lineTo(x, h - 25); gctx.stroke();
+  }
+  for (let y = 15; y < h - 25; y += 25) {
+    gctx.beginPath(); gctx.moveTo(45, y); gctx.lineTo(w, y); gctx.stroke();
+  }
+
+  // Axes
+  gctx.strokeStyle = '#cbd5e1';
+  gctx.lineWidth = 2;
+  gctx.beginPath();
+  gctx.moveTo(45, 10);
+  gctx.lineTo(45, h - 25);
+  gctx.lineTo(w - 10, h - 25);
+  gctx.stroke();
+
+  // Axis Labels
+  gctx.fillStyle = '#94a3b8';
+  gctx.font = '11px "Plus Jakarta Sans", sans-serif';
+  gctx.textAlign = 'right';
+  gctx.fillText("V (V)", 40, 18);
+  gctx.textAlign = 'center';
+  gctx.fillText(currentProcedure === 'A' ? "Length l (cm)" : "Current I (A)", w / 2, h - 6);
+
+  const list = (currentProcedure === 'A') ? readingsA : readingsB;
+
+  if (list.length < 2) {
+    document.getElementById('graph-slope').textContent = '--';
+    document.getElementById('graph-intercept').textContent = '--';
+    document.getElementById('graph-lambda').textContent = '--';
+    document.getElementById('rep-slope').textContent = 'S = --';
+    document.getElementById('rep-intercept').textContent = 'V₀ = --';
+    document.getElementById('rep-lambda-calc').textContent = 'λ = -- Ω/cm';
+    return;
+  }
+
+  // Least-Squares Linear Regression Fit
+  let sumX = 0, sumY = 0, sumXY = 0, sumXX = 0;
+  const n = list.length;
+  list.forEach(pt => {
+    const x = (currentProcedure === 'A') ? pt.param : pt.i;
+    const y = pt.v;
+    sumX += x;
+    sumY += y;
+    sumXY += x * y;
+    sumXX += x * x;
+  });
+
+  const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
+  const intercept = (sumY - slope * sumX) / n;
+
+  const maxScaleX = (currentProcedure === 'A') ? 100 : 1.0;
+  const maxScaleY = (currentProcedure === 'A') ? 3.0 : 3.0;
+
+  // Plot Data Points
+  gctx.fillStyle = '#38bdf8';
+  list.forEach(pt => {
+    const xVal = (currentProcedure === 'A') ? pt.param : pt.i;
+    const px = 45 + (xVal / maxScaleX) * (w - 60);
+    const py = (h - 25) - (pt.v / maxScaleY) * (h - 45);
+    gctx.beginPath();
+    gctx.arc(px, py, 4.5, 0, Math.PI * 2);
+    gctx.fill();
+    gctx.strokeStyle = '#ffffff';
+    gctx.lineWidth = 1;
+    gctx.stroke();
+  });
+
+  // Best Fit Regression Line
+  const x1 = 0; const y1 = intercept;
+  const x2 = maxScaleX; const y2 = slope * maxScaleX + intercept;
+
+  const px1 = 45 + (x1 / maxScaleX) * (w - 60);
+  const py1 = (h - 25) - (y1 / maxScaleY) * (h - 45);
+  const px2 = 45 + (x2 / maxScaleX) * (w - 60);
+  const py2 = (h - 25) - (y2 / maxScaleY) * (h - 45);
+
+  gctx.strokeStyle = '#10b981';
+  gctx.lineWidth = 2.5;
+  gctx.beginPath();
+  gctx.moveTo(px1, py1);
+  gctx.lineTo(px2, py2);
+  gctx.stroke();
+
+  if (currentProcedure === 'A') {
+    const lambdaVal = (Math.abs(slope) * STANDARD_RESISTANCE) / (intercept > 0 ? intercept : 0.5);
+    document.getElementById('graph-slope').textContent = `${slope.toFixed(4)} V/cm`;
+    document.getElementById('graph-intercept').textContent = `${intercept.toFixed(3)} V`;
+    document.getElementById('graph-lambda').textContent = `${lambdaVal.toFixed(4)} Ω/cm`;
+
+    document.getElementById('rep-slope').textContent = `S = ΔV / Δl = ${slope.toFixed(4)} V/cm`;
+    document.getElementById('rep-intercept').textContent = `V₀ = ${intercept.toFixed(3)} V`;
+    document.getElementById('rep-lambda-calc').textContent = `λ = (S × R) / V₀ = (${slope.toFixed(4)} × 2.0) / ${intercept.toFixed(3)} = ${lambdaVal.toFixed(4)} Ω/cm`;
+    document.getElementById('rep-final-text').innerHTML = `
+      1. Resistance per unit length of wire: <strong>λ = ${lambdaVal.toFixed(4)} Ω/cm</strong> (Total wire R = ${(lambdaVal * 100).toFixed(2)} Ω).<br>
+      2. ISC deduction formula λ = (S × R) / V₀ verified accurately.
+    `;
+  } else {
+    // PROCEDURE B (AUDIT P0 FIX): Verifying V = I * R.B.
+    document.getElementById('graph-slope').textContent = `${slope.toFixed(2)}`;
+    document.getElementById('graph-intercept').textContent = `${intercept.toFixed(3)} V`;
+    document.getElementById('graph-lambda').textContent = `V/I = R.B. Verified`;
+
+    document.getElementById('rep-slope').textContent = `Slope ΔV/ΔI = ${slope.toFixed(2)} V/A`;
+    document.getElementById('rep-intercept').textContent = `V_offset = ${intercept.toFixed(3)} V`;
+    document.getElementById('rep-lambda-calc').textContent = `Verification: V / I = R.B. for all dialled values.`;
+    document.getElementById('rep-final-text').innerHTML = `
+      1. For every dialled value of Resistance Box (1 Ω to 5 Ω), the measured ratio <strong>V / I = R.B.</strong> (constant at each step).<br>
+      2. <strong>Ohm's Law is verified</strong>: Current I is directly proportional to potential drop V across the resistance.
+    `;
+  }
+}
+
+// =========================================================================
+// 16. CAMERA PRESETS
+// =========================================================================
+window.setCameraPreset = function(preset) {
+  AudioSys.playClick();
+  document.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('active'));
+
+  const targets = {
+    bench: { pos: new THREE.Vector3(0, 8.2, 9.6), look: new THREE.Vector3(0, 0.4, 0) },
+    meters: { pos: new THREE.Vector3(0, 4.2, 2.2), look: new THREE.Vector3(0, 1.2, -2.5) },
+    bridge: { pos: new THREE.Vector3(0, 3.8, 5.0), look: new THREE.Vector3(0, 0.5, 2.2) },
+    battery: { pos: new THREE.Vector3(-6.2, 3.2, 1.2), look: new THREE.Vector3(-6.2, 0.9, -2.5) },
+    rb: { pos: new THREE.Vector3(6.8, 3.2, 1.2), look: new THREE.Vector3(6.8, 0.8, -2.4) }
+  };
+
+  const t = targets[preset] || targets.bench;
+
+  const startPos = camera.position.clone();
+  const startTarget = controls.target.clone();
+  const startTime = performance.now();
+  const dur = 650;
+
+  function anim(now) {
+    const p = Math.min(1, (now - startTime) / dur);
+    const ease = 1 - Math.pow(1 - p, 3);
+    camera.position.lerpVectors(startPos, t.pos, ease);
+    controls.target.lerpVectors(startTarget, t.look, ease);
+    controls.update();
+    if (p < 1) requestAnimationFrame(anim);
+  }
+  requestAnimationFrame(anim);
+};
+
+window.toggleWindow = function(winId) {
+  AudioSys.playClick();
+  const el = document.getElementById(winId);
+  if (!el) return;
+  const isVisible = (el.style.display === 'flex');
+  el.style.display = isVisible ? 'none' : 'flex';
+
+  const toggleBtnMap = {
+    'win-directive': 'btn-toggle-guide',
+    'win-telemetry': 'btn-toggle-hud',
+    'win-table': 'btn-toggle-table',
+    'win-graph': 'btn-toggle-graph',
+    'win-meters-inspection': 'btn-toggle-dials',
+    'win-report': 'btn-toggle-report'
+  };
+  const btnId = toggleBtnMap[winId];
+  if (btnId) {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      if (isVisible) btn.classList.remove('active');
+      else btn.classList.add('active');
+    }
+  }
+};
+
+let isCleanView = false;
+window.toggleCleanView = function() {
+  AudioSys.playClick();
+  isCleanView = !isCleanView;
+  const winIds = ['win-directive', 'win-telemetry', 'win-table', 'win-graph', 'win-meters-inspection', 'win-report'];
+  winIds.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const btnClean = document.getElementById('btn-toggle-clean');
+  if (btnClean) {
+    if (isCleanView) {
+      btnClean.classList.add('active');
+      showToast("Clean View: UI overlay hidden.", "info");
+    } else {
+      btnClean.classList.remove('active');
+      document.getElementById('win-directive').style.display = 'flex';
+      showToast("Clean View Exited.", "info");
+    }
+  }
+};
+
+function setupDraggableWindows() {
+  const windows = document.querySelectorAll('.window-frame');
+  windows.forEach(win => {
+    const titlebar = win.querySelector('.window-titlebar');
+    if (!titlebar) return;
+
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initLeft = 0, initTop = 0;
+
+    titlebar.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      const rect = win.getBoundingClientRect();
+      initLeft = rect.left;
+      initTop = rect.top;
+
+      windows.forEach(w => w.classList.remove('active-window'));
+      win.classList.add('active-window');
+      win.style.zIndex = 500;
+
+      const onMouseMove = (me) => {
+        if (!isDragging) return;
+        const dx = me.clientX - startX;
+        const dy = me.clientY - startY;
+        win.style.left = (initLeft + dx) + 'px';
+        win.style.top = (initTop + dy) + 'px';
+        win.style.bottom = 'auto';
+        win.style.right = 'auto';
+        win.style.transform = 'none';
+      };
+
+      const onMouseUp = () => {
+        isDragging = false;
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+      };
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+    });
+  });
+}
+
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${msg}</span>`;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(40px)';
+    toast.style.transition = 'all 0.25s ease';
+    setTimeout(() => toast.remove(), 250);
+  }, 3500);
+}
+
+function onWindowResize() {
+  if (!camera || !renderer) return;
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+// =========================================================================
+// 17. MAIN ANIMATION & PHYSICS TICK LOOP
+// =========================================================================
+let haloClock = 0;
+function animate() {
+  requestAnimationFrame(animate);
+  haloClock += 0.05;
+
+  Object.values(terminalHalos).forEach(h => {
+    if (h && h.material && h.material.opacity > 0.0) {
+      const pulse = 0.5 + Math.sin(haloClock * 3) * 0.35;
+      h.material.opacity = pulse;
+      h.rotation.z += 0.02;
+    }
+  });
+
+  updateNeedlePhysics();
+
+  if (controls) controls.update();
+  if (renderer && scene && camera) renderer.render(scene, camera);
+}
+</script>
+</body>
+</html>
